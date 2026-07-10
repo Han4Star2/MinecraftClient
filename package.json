@@ -1,0 +1,32 @@
+{
+  "name": "quill-launcher",
+  "version": "1.0.0",
+  "description": "Quill — an open, feather-light Minecraft launcher. Feather-style UI, zero dependencies, no lock-in.",
+  "type": "module",
+  "main": "server/index.js",
+  "bin": {
+    "quill": "./server/index.js"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node --test test/",
+    "screenshots": "node tools/screenshots.mjs"
+  },
+  "engines": {
+    "node": ">=18.17"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Han4Star2/MinecraftClient"
+  },
+  "keywords": [
+    "minecraft",
+    "launcher",
+    "feather",
+    "open-source",
+    "fabric",
+    "forge",
+    "modrinth"
+  ],
+  "license": "MIT"
+}

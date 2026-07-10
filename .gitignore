@@ -1,0 +1,15 @@
+# Runtime data (profiles, caches, downloaded game files)
+/data/
+*.log
+
+# Dependencies (Quill itself has none — this covers local tooling experiments)
+node_modules/
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.swp

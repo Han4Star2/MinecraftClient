@@ -1,0 +1,263 @@
+/* Tiny i18n layer — English and German out of the box.
+   Adding a language = adding one object here. No external service. */
+
+const dict = {
+  en: {
+    'nav.home': 'Home',
+    'nav.library': 'Library',
+    'nav.mods': 'Mods',
+    'nav.hud': 'HUD Editor',
+    'nav.cosmetics': 'Cosmetics',
+    'nav.friends': 'Friends',
+    'nav.screenshots': 'Screenshots',
+    'nav.settings': 'Settings',
+
+    'home.singleplayer': 'Singleplayer',
+    'home.multiplayer': 'Multiplayer',
+    'home.cosmetics': 'Cosmetics',
+    'home.screenshots': 'Screenshots',
+    'home.play': 'PLAY',
+    'home.quit': 'QUIT LAUNCHER',
+    'home.promo.title': '100% free & open source',
+    'home.promo.sub': 'Every feature included. No store, no paywall — MIT licensed.',
+    'home.readyProfile': 'Playing',
+
+    'lib.title': 'Library',
+    'lib.sub': 'Your installations. Each profile keeps its own mods, settings, RAM and Java — fully isolated.',
+    'lib.new': 'New installation',
+    'lib.play': 'Play',
+    'lib.edit': 'Edit',
+    'lib.lastPlayed': 'Last played',
+    'lib.never': 'never',
+    'lib.duplicate': 'Duplicate',
+    'lib.export': 'Export profile (JSON)',
+    'lib.openFolder': 'Open game folder',
+    'lib.delete': 'Delete',
+    'lib.import': 'Import',
+    'lib.name': 'Name',
+    'lib.version': 'Minecraft version',
+    'lib.loader': 'Mod loader',
+    'lib.ram': 'Memory (RAM)',
+    'lib.create': 'Create',
+    'lib.saveChanges': 'Save changes',
+
+    'mods.title': 'Mods',
+    'mods.sub': 'Toggle, configure and install mods per profile. Standard mods folder — no proprietary format.',
+    'mods.search': 'Search',
+    'mods.all': 'All',
+    'mods.new': 'New',
+    'mods.installed': 'Installed',
+    'mods.enabled': 'Enabled',
+    'mods.disabled': 'Disabled',
+    'mods.configure': 'Configure',
+    'mods.getMore': 'Get more mods',
+    'mods.browse': 'Browse Modrinth',
+
+    'hud.title': 'HUD Editor',
+    'hud.sub': 'Drag any overlay where you want it. Scale, color and toggle each element — saved per profile.',
+    'hud.elements': 'Elements',
+    'hud.selected': 'Selected element',
+    'hud.scale': 'Scale',
+    'hud.opacity': 'Opacity',
+    'hud.color': 'Color',
+    'hud.background': 'Background',
+    'hud.reset': 'Reset layout',
+    'hud.grid': 'Grid',
+    'hud.none': 'Click an element on the stage to edit it.',
+
+    'cos.title': 'Cosmetics',
+    'cos.sub': 'Capes, hats, wings and more — rendered locally on your skin.',
+    'cos.banner': 'All cosmetics are <b>free</b> — stored locally as open JSON, visible to everyone on Quill.',
+    'cos.equip': 'Equip',
+    'cos.equipped': 'Equipped',
+    'cos.unequip': 'Remove',
+    'cos.preview': 'Live preview',
+
+    'friends.title': 'Friends',
+    'friends.sub': 'Optional and self-hostable — Quill never requires an account to play.',
+    'friends.add': 'Add friend',
+    'friends.online': 'Online',
+    'friends.offline': 'Offline',
+
+    'shots.title': 'Screenshots',
+    'shots.sub': 'Everything you captured, in one place.',
+    'shots.openFolder': 'Open folder',
+
+    'set.title': 'Settings',
+    'set.general': 'General',
+    'set.performance': 'Performance',
+    'set.minecraft': 'Minecraft',
+    'set.network': 'Network',
+    'set.account': 'Account',
+    'set.about': 'About',
+    'set.language': 'Language',
+    'set.language.d': 'Launcher interface language',
+    'set.animations': 'Animations',
+    'set.animations.d': 'Disable for minimal CPU/GPU usage',
+    'set.accent': 'Accent color',
+    'set.accent.d': 'Used for buttons and highlights',
+    'set.keepOpen': 'Keep launcher open',
+    'set.keepOpen.d': 'Stay open while the game is running',
+    'set.ram': 'Default memory',
+    'set.ram.d': 'Profiles can override this',
+    'set.save': 'Save',
+    'set.saved': 'Settings saved',
+
+    'launch.preparing': 'Preparing',
+    'launch.downloading': 'Downloading',
+    'launch.launching': 'Launching',
+    'launch.running': 'Running',
+    'launch.done': 'Finished',
+    'launch.failed': 'Failed',
+    'launch.cancel': 'Cancel',
+    'launch.kill': 'Stop game',
+    'launch.logs': 'Logs',
+
+    'common.close': 'Close',
+    'common.cancel': 'Cancel',
+    'common.confirm': 'Confirm',
+    'common.demo': 'Demo mode — start the backend for full functionality: `node server/index.js`',
+  },
+
+  de: {
+    'nav.home': 'Startseite',
+    'nav.library': 'Bibliothek',
+    'nav.mods': 'Mods',
+    'nav.hud': 'HUD-Editor',
+    'nav.cosmetics': 'Kosmetik',
+    'nav.friends': 'Freunde',
+    'nav.screenshots': 'Screenshots',
+    'nav.settings': 'Einstellungen',
+
+    'home.singleplayer': 'Einzelspieler',
+    'home.multiplayer': 'Mehrspieler',
+    'home.cosmetics': 'Kosmetik',
+    'home.screenshots': 'Screenshots',
+    'home.play': 'SPIELEN',
+    'home.quit': 'LAUNCHER BEENDEN',
+    'home.promo.title': '100 % kostenlos & Open Source',
+    'home.promo.sub': 'Alle Features inklusive. Kein Store, keine Paywall — MIT-Lizenz.',
+    'home.readyProfile': 'Aktiv',
+
+    'lib.title': 'Bibliothek',
+    'lib.sub': 'Deine Installationen. Jedes Profil hat eigene Mods, Einstellungen, RAM und Java — vollständig isoliert.',
+    'lib.new': 'Neue Installation',
+    'lib.play': 'Spielen',
+    'lib.edit': 'Bearbeiten',
+    'lib.lastPlayed': 'Zuletzt gespielt',
+    'lib.never': 'nie',
+    'lib.duplicate': 'Duplizieren',
+    'lib.export': 'Profil exportieren (JSON)',
+    'lib.openFolder': 'Spielordner öffnen',
+    'lib.delete': 'Löschen',
+    'lib.import': 'Importieren',
+    'lib.name': 'Name',
+    'lib.version': 'Minecraft-Version',
+    'lib.loader': 'Mod-Loader',
+    'lib.ram': 'Arbeitsspeicher (RAM)',
+    'lib.create': 'Erstellen',
+    'lib.saveChanges': 'Änderungen speichern',
+
+    'mods.title': 'Mods',
+    'mods.sub': 'Mods pro Profil aktivieren, konfigurieren und installieren. Standard-Mods-Ordner — kein proprietäres Format.',
+    'mods.search': 'Suchen',
+    'mods.all': 'Alle',
+    'mods.new': 'Neu',
+    'mods.installed': 'Installiert',
+    'mods.enabled': 'Aktiviert',
+    'mods.disabled': 'Deaktiviert',
+    'mods.configure': 'Konfigurieren',
+    'mods.getMore': 'Mehr Mods holen',
+    'mods.browse': 'Modrinth durchsuchen',
+
+    'hud.title': 'HUD-Editor',
+    'hud.sub': 'Ziehe jedes Overlay dorthin, wo du es willst. Größe, Farbe und Sichtbarkeit pro Element — gespeichert pro Profil.',
+    'hud.elements': 'Elemente',
+    'hud.selected': 'Ausgewähltes Element',
+    'hud.scale': 'Größe',
+    'hud.opacity': 'Transparenz',
+    'hud.color': 'Farbe',
+    'hud.background': 'Hintergrund',
+    'hud.reset': 'Layout zurücksetzen',
+    'hud.grid': 'Raster',
+    'hud.none': 'Klicke ein Element auf der Bühne an, um es zu bearbeiten.',
+
+    'cos.title': 'Kosmetik',
+    'cos.sub': 'Capes, Hüte, Flügel und mehr — lokal auf deinem Skin gerendert.',
+    'cos.banner': 'Alle Kosmetik-Artikel sind <b>kostenlos</b> — als offenes JSON lokal gespeichert, sichtbar für alle Quill-Spieler.',
+    'cos.equip': 'Anlegen',
+    'cos.equipped': 'Angelegt',
+    'cos.unequip': 'Ablegen',
+    'cos.preview': 'Live-Vorschau',
+
+    'friends.title': 'Freunde',
+    'friends.sub': 'Optional und selbst hostbar — Quill erfordert zum Spielen keinen Account.',
+    'friends.add': 'Freund hinzufügen',
+    'friends.online': 'Online',
+    'friends.offline': 'Offline',
+
+    'shots.title': 'Screenshots',
+    'shots.sub': 'Alles, was du aufgenommen hast, an einem Ort.',
+    'shots.openFolder': 'Ordner öffnen',
+
+    'set.title': 'Einstellungen',
+    'set.general': 'Allgemein',
+    'set.performance': 'Leistung',
+    'set.minecraft': 'Minecraft',
+    'set.network': 'Netzwerk',
+    'set.account': 'Konto',
+    'set.about': 'Über',
+    'set.language': 'Sprache',
+    'set.language.d': 'Sprache der Launcher-Oberfläche',
+    'set.animations': 'Animationen',
+    'set.animations.d': 'Deaktivieren für minimale CPU-/GPU-Last',
+    'set.accent': 'Akzentfarbe',
+    'set.accent.d': 'Für Buttons und Hervorhebungen',
+    'set.keepOpen': 'Launcher offen lassen',
+    'set.keepOpen.d': 'Bleibt geöffnet, während das Spiel läuft',
+    'set.ram': 'Standard-Arbeitsspeicher',
+    'set.ram.d': 'Profile können dies überschreiben',
+    'set.save': 'Speichern',
+    'set.saved': 'Einstellungen gespeichert',
+
+    'launch.preparing': 'Vorbereiten',
+    'launch.downloading': 'Herunterladen',
+    'launch.launching': 'Starten',
+    'launch.running': 'Läuft',
+    'launch.done': 'Beendet',
+    'launch.failed': 'Fehlgeschlagen',
+    'launch.cancel': 'Abbrechen',
+    'launch.kill': 'Spiel stoppen',
+    'launch.logs': 'Logs',
+
+    'common.close': 'Schließen',
+    'common.cancel': 'Abbrechen',
+    'common.confirm': 'Bestätigen',
+    'common.demo': 'Demo-Modus — starte das Backend für volle Funktionalität: `node server/index.js`',
+  },
+};
+
+let lang = 'en';
+
+export function setLang(l) {
+  lang = dict[l] ? l : 'en';
+}
+
+export function getLang() {
+  return lang;
+}
+
+export function detectLang() {
+  const nav = (navigator.language || 'en').slice(0, 2).toLowerCase();
+  return dict[nav] ? nav : 'en';
+}
+
+/** Translate a key; falls back to English, then to the key itself. */
+export function t(key) {
+  return dict[lang]?.[key] ?? dict.en[key] ?? key;
+}
+
+export const languages = [
+  { id: 'en', label: 'English' },
+  { id: 'de', label: 'Deutsch' },
+];
