@@ -10,8 +10,8 @@ import path from 'node:path';
 import { promises as fsp } from 'node:fs';
 import { buildZip, fixtureServer, sha1hex } from './helpers.mjs';
 
-const tmp = await fsp.mkdtemp(path.join(os.tmpdir(), 'quill-launch-'));
-process.env.QUILL_DATA = tmp;
+const tmp = await fsp.mkdtemp(path.join(os.tmpdir(), 'horus-launch-'));
+process.env.HORUS_DATA = tmp;
 
 const { initStore, upsertProfile } = await import('../server/store.js');
 const { startLaunch, launchState, ruleAllows, buildCommand } = await import('../server/launcher.js');
@@ -71,7 +71,7 @@ test('full dry-run launch against fixture meta server', async (t) => {
 
   const clientJar = buildZip({ 'net/minecraft/client/main/Main.class': 'fake' });
   const libJar = buildZip({ 'lib.class': 'fake lib' });
-  const nativeJar = buildZip({ 'libquill.so': 'fake native', 'META-INF/x': 'skip me' });
+  const nativeJar = buildZip({ 'libhorus.so': 'fake native', 'META-INF/x': 'skip me' });
   const assetPng = Buffer.from('fake png');
   const assetHash = sha1hex(assetPng);
 
@@ -81,7 +81,7 @@ test('full dry-run launch against fixture meta server', async (t) => {
   t.after(() => fx.close());
 
   const nat = (cls) => ({
-    path: `quill/natives/1.0/natives-1.0-${cls}.jar`,
+    path: `horus/natives/1.0/natives-1.0-${cls}.jar`,
     url: `${fx.base}/files/native.jar`,
     sha1: sha1hex(nativeJar),
   });
@@ -93,10 +93,10 @@ test('full dry-run launch against fixture meta server', async (t) => {
     downloads: { client: { url: `${fx.base}/files/client.jar`, sha1: sha1hex(clientJar), size: clientJar.length } },
     assetIndex: { id: 'test-assets', url: `${fx.base}/assets/index.json`, sha1: null },
     libraries: [
-      { name: 'quill:testlib:1.0', downloads: { artifact: { path: 'quill/testlib/1.0/testlib-1.0.jar', url: `${fx.base}/files/lib.jar`, sha1: sha1hex(libJar) } } },
-      { name: 'quill:winonly:1.0', rules: [{ action: 'allow', os: { name: 'windows' } }], downloads: { artifact: { path: 'quill/winonly/1.0/winonly-1.0.jar', url: `${fx.base}/files/never.jar`, sha1: 'x' } } },
+      { name: 'horus:testlib:1.0', downloads: { artifact: { path: 'horus/testlib/1.0/testlib-1.0.jar', url: `${fx.base}/files/lib.jar`, sha1: sha1hex(libJar) } } },
+      { name: 'horus:winonly:1.0', rules: [{ action: 'allow', os: { name: 'windows' } }], downloads: { artifact: { path: 'horus/winonly/1.0/winonly-1.0.jar', url: `${fx.base}/files/never.jar`, sha1: 'x' } } },
       {
-        name: 'quill:natives:1.0',
+        name: 'horus:natives:1.0',
         natives: { linux: 'natives-linux', osx: 'natives-osx', windows: 'natives-windows' },
         downloads: { classifiers: { 'natives-linux': nat('natives-linux'), 'natives-osx': nat('natives-osx'), 'natives-windows': nat('natives-windows') } },
       },
@@ -124,8 +124,8 @@ test('full dry-run launch against fixture meta server', async (t) => {
     [`/a/${assetHash.slice(0, 2)}/${assetHash}`]: assetPng,
   });
 
-  process.env.QUILL_META_BASE = fx.base;
-  process.env.QUILL_ASSETS_BASE = `${fx.base}/a`;
+  process.env.HORUS_META_BASE = fx.base;
+  process.env.HORUS_ASSETS_BASE = `${fx.base}/a`;
 
   await initStore({ data: tmp });
   const profile = await upsertProfile('p-test', {
@@ -149,7 +149,7 @@ test('full dry-run launch against fixture meta server', async (t) => {
   assert.ok(command.includes('net.minecraft.client.main.Main'), 'main class');
 
   const cp = command[command.indexOf('-cp') + 1];
-  assert.ok(cp.includes(path.join('quill', 'testlib', '1.0', 'testlib-1.0.jar')), 'library on classpath');
+  assert.ok(cp.includes(path.join('horus', 'testlib', '1.0', 'testlib-1.0.jar')), 'library on classpath');
   assert.ok(cp.includes(path.join('1.0-test', '1.0-test.jar')), 'client jar on classpath');
   assert.ok(!cp.includes('winonly'), 'os-disallowed library filtered out');
 
@@ -160,14 +160,14 @@ test('full dry-run launch against fixture meta server', async (t) => {
 
   // natives extracted, META-INF filtered
   const natDir = path.join(tmp, 'natives', '1.0-test');
-  assert.equal(await fsp.readFile(path.join(natDir, 'libquill.so'), 'utf8'), 'fake native');
+  assert.equal(await fsp.readFile(path.join(natDir, 'libhorus.so'), 'utf8'), 'fake native');
   await assert.rejects(fsp.access(path.join(natDir, 'META-INF', 'x')));
 
   // asset landed in the hash store
   await fsp.access(path.join(tmp, 'assets', 'objects', assetHash.slice(0, 2), assetHash));
 
   // sha1 verification actually ran: corrupt cache detection
-  const libPath = path.join(tmp, 'libraries', 'quill', 'testlib', '1.0', 'testlib-1.0.jar');
+  const libPath = path.join(tmp, 'libraries', 'horus', 'testlib', '1.0', 'testlib-1.0.jar');
   assert.equal(sha1hex(await fsp.readFile(libPath)), sha1hex(libJar));
 
   assert.equal(launchState().running, false);

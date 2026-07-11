@@ -13,10 +13,10 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ENTRY = path.join(HERE, '..', 'server', 'index.js');
 
 async function bootServer(t) {
-  const dataDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'quill-api-'));
+  const dataDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'horus-api-'));
   const port = 17000 + Math.floor(Math.random() * 4000);
   const child = spawn(process.execPath, [ENTRY, '--port', String(port), '--no-open', '--data', dataDir], {
-    env: { ...process.env, QUILL_NO_OPEN: '1' },
+    env: { ...process.env, HORUS_NO_OPEN: '1' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   t.after(() => { child.kill('SIGTERM'); });
@@ -38,13 +38,13 @@ test('api: status, settings, profiles, mods, static UI', async (t) => {
 
   /* status */
   const status = await (await fetch(`${base}/api/status`)).json();
-  assert.equal(status.name, 'quill');
+  assert.equal(status.name, 'horus');
   assert.ok(status.totalMemMb > 0);
   assert.equal(status.launch.running, false);
 
   /* static UI served */
   const html = await (await fetch(`${base}/`)).text();
-  assert.match(html, /Quill Launcher/);
+  assert.match(html, /Horus Launcher/);
   const css = await fetch(`${base}/css/base.css`);
   assert.equal(css.headers.get('content-type'), 'text/css; charset=utf-8');
 
@@ -113,4 +113,32 @@ test('api: status, settings, profiles, mods, static UI', async (t) => {
   /* unknown endpoint */
   const nope = await fetch(`${base}/api/nope`);
   assert.equal(nope.status, 404);
+
+  /* economy persistence roundtrip */
+  const empty = await (await fetch(`${base}/api/economy`)).json();
+  assert.equal(empty.coins, undefined, 'no economy until the client seeds one');
+  const eco = { coins: 750, owned: ['cape-solid-crimson'], plusUntil: 0, daily: { last: '', streak: 0 }, quests: {}, minigame: { date: '', earned: 0, best: {} }, customCapes: [] };
+  const putRes = await fetch(`${base}/api/economy`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(eco),
+  });
+  assert.equal(putRes.status, 200);
+  const echoed = await (await fetch(`${base}/api/economy`)).json();
+  assert.equal(echoed.coins, 750);
+  assert.deepEqual(echoed.owned, ['cape-solid-crimson']);
+  const bad = await fetch(`${base}/api/economy`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ coins: 'lots' }),
+  });
+  assert.equal(bad.status, 500, 'invalid economy payload rejected');
+
+  /* worlds endpoint answers (empty is fine) */
+  const worlds = await (await fetch(`${base}/api/worlds`)).json();
+  assert.ok(Array.isArray(worlds.worlds));
+
+  /* curseforge without key → helpful error */
+  const cf = await (await fetch(`${base}/api/curseforge/search?q=jei`)).json();
+  assert.match(cf.error || '', /API key/);
 });

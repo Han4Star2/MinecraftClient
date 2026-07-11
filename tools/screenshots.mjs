@@ -16,11 +16,15 @@ const ROOT = path.join(HERE, '..');
 
 const PAGES = [
   ['home', 'home'],
+  ['news', 'news'],
   ['library', 'library'],
   ['mods', 'mods'],
   ['hud', 'hud'],
+  ['shop', 'shop'],
   ['cosmetics', 'cosmetics'],
-  ['friends', 'friends'],
+  ['minigames', 'minigames'],
+  ['social', 'social'],
+  ['worlds', 'worlds'],
   ['screenshots', 'screenshots'],
   ['settings', 'settings'],
 ];
@@ -53,7 +57,7 @@ async function main() {
   await fsp.mkdir(out, { recursive: true });
   const chrome = await findChrome();
 
-  const dataDir = await fsp.mkdtemp(path.join((await import('node:os')).tmpdir(), 'quill-shots-'));
+  const dataDir = await fsp.mkdtemp(path.join((await import('node:os')).tmpdir(), 'horus-shots-'));
   const server = spawn(process.execPath, [path.join(ROOT, 'server', 'index.js'), '--port', String(port), '--no-open', '--data', dataDir], {
     stdio: 'ignore',
   });
@@ -70,7 +74,7 @@ async function main() {
           '--headless', '--disable-gpu', '--no-sandbox', '--hide-scrollbars',
           '--window-size=1600,900', '--virtual-time-budget=5000',
           `--screenshot=${file}`, `http://127.0.0.1:${port}/#/${route}`,
-        ], (e) => (e ? reject(e) : resolve()));
+        ], { timeout: 45_000 }, (e) => (e ? reject(e) : resolve()));
       });
       console.log(`✓ ${name}.png`);
     }

@@ -1,5 +1,5 @@
 /* Version metadata: Mojang manifest + version JSON, with
-   - configurable mirrors (Settings → Network or QUILL_META_BASE): no lock-in,
+   - configurable mirrors (Settings → Network or HORUS_META_BASE): no lock-in,
    - a local cache so previously used versions keep working offline,
    - a bundled fallback list so the UI is never empty,
    - Fabric/Quilt loader profile merging (same open meta APIs the loaders publish). */
@@ -13,16 +13,16 @@ import { dirs, getSettings } from './store.js';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
 export function metaBase() {
-  return (process.env.QUILL_META_BASE || getSettings().metaMirror || 'https://piston-meta.mojang.com').replace(/\/+$/, '');
+  return (process.env.HORUS_META_BASE || getSettings().metaMirror || 'https://piston-meta.mojang.com').replace(/\/+$/, '');
 }
 
 export function assetsBase() {
-  return (process.env.QUILL_ASSETS_BASE || 'https://resources.download.minecraft.net').replace(/\/+$/, '');
+  return (process.env.HORUS_ASSETS_BASE || 'https://resources.download.minecraft.net').replace(/\/+$/, '');
 }
 
 function loaderBase(loader) {
-  if (loader === 'fabric') return (process.env.QUILL_FABRIC_BASE || 'https://meta.fabricmc.net/v2').replace(/\/+$/, '');
-  if (loader === 'quilt') return (process.env.QUILL_QUILT_BASE || 'https://meta.quiltmc.org/v3').replace(/\/+$/, '');
+  if (loader === 'fabric') return (process.env.HORUS_FABRIC_BASE || 'https://meta.fabricmc.net/v2').replace(/\/+$/, '');
+  if (loader === 'quilt') return (process.env.HORUS_QUILT_BASE || 'https://meta.quiltmc.org/v3').replace(/\/+$/, '');
   return null;
 }
 
@@ -95,7 +95,7 @@ export async function resolveVersion(profile, { proxy } = {}) {
 
   throw new Error(
     `${profile.loader} is not automated yet. Run its installer once, or use a Fabric/Quilt/Vanilla profile. ` +
-    `Quill uses only standard formats, so an existing ${profile.loader} installation keeps working via the shared game directory.`,
+    `Horus uses only standard formats, so an existing ${profile.loader} installation keeps working via the shared game directory.`,
   );
 }
 

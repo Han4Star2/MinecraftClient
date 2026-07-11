@@ -186,13 +186,13 @@ export function buildCommand({ json, profile, session, paths, javaBin, settings,
     auth_uuid: session.uuid,
     auth_access_token: session.accessToken,
     auth_session: session.accessToken === '0' ? '-' : `token:${session.accessToken}:${session.uuid}`,
-    clientid: 'quill',
+    clientid: 'horus',
     auth_xuid: session.xuid || '0',
     user_type: session.userType,
-    version_type: `Quill ${json.type || 'release'}`,
+    version_type: `Horus ${json.type || 'release'}`,
     user_properties: '{}',
     natives_directory: paths.nativesDir,
-    launcher_name: 'quill',
+    launcher_name: 'horus',
     launcher_version: '1.0.0',
     classpath,
     library_directory: dirs().libraries,
@@ -245,7 +245,7 @@ export async function startLaunch({ profile, server = null, dryRun = false }) {
 
   runPipeline({ profile, server, dryRun, abort }).catch((e) => {
     bus.emit({ type: 'launch', phase: 'failed', profileId: profile.id, detail: e.message });
-    bus.log(`[Quill] Launch failed: ${e.message}`, 'err');
+    bus.log(`[Horus] Launch failed: ${e.message}`, 'err');
     active = null;
   });
   return { started: true };
@@ -260,13 +260,34 @@ async function runPipeline({ profile, server, dryRun, abort }) {
   };
 
   bus.clearBacklog();
+
+  /* Bedrock Edition: launched through the OS protocol handler on Windows. */
+  if (profile.loader === 'bedrock') {
+    if (process.platform !== 'win32') {
+      throw new Error('Bedrock Edition can only be launched on Windows (Microsoft Store app)');
+    }
+    phase('launching', 'minecraft:// protocol');
+    bus.log('[Horus] Starting Bedrock Edition via the Windows protocol handler…');
+    if (dryRun || process.env.HORUS_DRY_RUN === '1') {
+      await writeJson(path.join(dirs().data, 'last-command.json'), { command: ['cmd', '/c', 'start', '', 'minecraft://'] });
+    } else {
+      spawn('cmd', ['/c', 'start', '', 'minecraft://'], { detached: true, stdio: 'ignore' }).unref();
+    }
+    await touchProfile(profile.id, { lastPlayed: Date.now() });
+    phase('running', 'Bedrock hand-off');
+    bus.log('[Horus] Bedrock launched. Version switching uses the Store-installed build — see README for multi-version setups.');
+    bus.emit({ type: 'exit', code: 0 });
+    active = null;
+    return;
+  }
+
   phase('preparing', `resolving ${profile.version} (${profile.loader})`);
-  bus.log(`[Quill] Resolving ${profile.version} (${profile.loader})…`);
+  bus.log(`[Horus] Resolving ${profile.version} (${profile.loader})…`);
 
   const { json } = await resolveVersion(profile, { proxy });
   const requiredMajor = json.javaVersion?.majorVersion || 0;
   const java = await pickJava({ preferred: profile.javaPath || settings.javaPath, requiredMajor });
-  bus.log(`[Quill] Java: ${java.version} (${java.path})`);
+  bus.log(`[Horus] Java: ${java.version} (${java.path})`);
 
   /* plan downloads */
   const clientJar = path.join(dirs().versions, json.id, `${json.id}.jar`);
@@ -288,7 +309,7 @@ async function runPipeline({ profile, server, dryRun, abort }) {
     signal: abort.signal,
     onProgress: (p) => bus.emit({ type: 'progress', ...p }),
   });
-  bus.log(`[Quill] Verified ${tasks.length} files (${(bytes / 1048576).toFixed(1)} MB fetched, rest cached)`);
+  bus.log(`[Horus] Verified ${tasks.length} files (${(bytes / 1048576).toFixed(1)} MB fetched, rest cached)`);
 
   /* natives */
   const nativesDir = path.join(dirs().natives, json.id);
@@ -296,7 +317,7 @@ async function runPipeline({ profile, server, dryRun, abort }) {
   for (const nat of nativeJars) {
     await extractZip(nat.dest, nativesDir, (name) => !nat.extractExclude.some((ex) => name.startsWith(ex)));
   }
-  if (nativeJars.length) bus.log(`[Quill] Extracted ${nativeJars.length} native jars`);
+  if (nativeJars.length) bus.log(`[Horus] Extracted ${nativeJars.length} native jars`);
 
   /* assets → virtual layout for legacy versions */
   let virtualAssets = null;
@@ -312,7 +333,7 @@ async function runPipeline({ profile, server, dryRun, abort }) {
     xuid: '0',
   };
   if (!msa && settings.accountType === 'msa') {
-    bus.log('[Quill] No Microsoft session — falling back to offline mode', 'err');
+    bus.log('[Horus] No Microsoft session — falling back to offline mode', 'err');
   }
 
   const gameDir = profileGameDir(profile);
@@ -330,12 +351,12 @@ async function runPipeline({ profile, server, dryRun, abort }) {
   });
 
   phase('launching', `java -Xmx${profile.ramMb || settings.defaultRamMb}M …`);
-  bus.log(`[Quill] ${command.map((c) => (c.includes(' ') ? JSON.stringify(c) : c)).join(' ').slice(0, 900)}`);
+  bus.log(`[Horus] ${command.map((c) => (c.includes(' ') ? JSON.stringify(c) : c)).join(' ').slice(0, 900)}`);
 
-  if (dryRun || process.env.QUILL_DRY_RUN === '1') {
+  if (dryRun || process.env.HORUS_DRY_RUN === '1') {
     await writeJson(path.join(dirs().data, 'last-command.json'), { command, gameDir });
     bus.emit({ type: 'launch', phase: 'running', profileId: profile.id, detail: 'dry run' });
-    bus.log('[Quill] Dry run: command written to last-command.json — game not started.');
+    bus.log('[Horus] Dry run: command written to last-command.json — game not started.');
     bus.emit({ type: 'exit', code: 0 });
     active = null;
     return;
@@ -347,7 +368,7 @@ async function runPipeline({ profile, server, dryRun, abort }) {
   await touchProfile(profile.id, { lastPlayed: startedAt });
 
   phase('running');
-  bus.log(`[Quill] Game started (pid ${child.pid})`);
+  bus.log(`[Horus] Game started (pid ${child.pid})`);
 
   const pipe = (stream, tag) => {
     let buf = '';
@@ -366,7 +387,7 @@ async function runPipeline({ profile, server, dryRun, abort }) {
 
   child.on('exit', async (code) => {
     bus.emit({ type: 'exit', code: code ?? 0 });
-    bus.log(`[Quill] Game exited with code ${code ?? 0}`);
+    bus.log(`[Horus] Game exited with code ${code ?? 0}`);
     const wasActive = active;
     active = null;
     if (wasActive) {

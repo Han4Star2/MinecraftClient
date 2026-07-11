@@ -133,7 +133,7 @@ export const MOD_CATS = [
 /* -------------------------------------------------------------- cosmetics */
 
 export const COSMETICS = [
-  { id: 'cape-quill', cat: 'cape', name: 'Quill Classic', base: '#7a1f2b', alt: '#e8394a', pattern: 'quill', seed: 3 },
+  { id: 'cape-horus', cat: 'cape', name: 'Horus Classic', base: '#7a1f2b', alt: '#e8394a', pattern: 'horus', seed: 3 },
   { id: 'cape-midnight', cat: 'cape', name: 'Midnight', base: '#191c24', alt: '#3a4152', pattern: 'gradient', seed: 5 },
   { id: 'cape-emerald', cat: 'cape', name: 'Emerald', base: '#1d6b3f', alt: '#35d374', pattern: 'stripe', seed: 8 },
   { id: 'cape-royal', cat: 'cape', name: 'Royal', base: '#2c2260', alt: '#7a5cff', pattern: 'vstripe', seed: 11 },
@@ -219,6 +219,7 @@ export const LOADERS = [
   { id: 'forge', label: 'Forge' },
   { id: 'neoforge', label: 'NeoForge' },
   { id: 'quilt', label: 'Quilt' },
+  { id: 'bedrock', label: 'Bedrock Edition' },
 ];
 
 export const LOADER_COLORS = {
@@ -227,6 +228,7 @@ export const LOADER_COLORS = {
   forge: 'linear-gradient(135deg,#465a7c,#2c3a52)',
   neoforge: 'linear-gradient(135deg,#c46231,#8a3f1c)',
   quilt: 'linear-gradient(135deg,#9b59d0,#5f3382)',
+  bedrock: 'linear-gradient(135deg,#7a7a82,#4a4a52)',
 };
 
 export function defaultProfiles() {
@@ -257,6 +259,8 @@ export function defaultSettings() {
     proxy: '',
     downloadConcurrency: 4,
     metaMirror: '',
+    curseforgeKey: '',
+    theme: 'dark',
     accountName: 'Player',
     accountType: 'offline',
     msaClientId: '',

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Quill Launcher backend — a single dependency-free Node process:
+/* Horus Launcher backend — a single dependency-free Node process:
    static UI hosting + REST API + SSE + the launch pipeline.
 
      node server/index.js [--port 7411] [--host 127.0.0.1]
@@ -44,7 +44,7 @@ function parseArgs(argv) {
     else if (a === '--data') args.data = argv[++i] || '';
     else if (a === '--no-open') args.open = false;
     else if (a === '--help' || a === '-h') {
-      console.log('quill [--port 7411] [--host 127.0.0.1] [--portable] [--data <dir>] [--no-open]');
+      console.log('horus [--port 7411] [--host 127.0.0.1] [--portable] [--data <dir>] [--no-open]');
       process.exit(0);
     }
   }
@@ -110,26 +110,32 @@ async function main() {
     const addr = `http://${args.host}:${args.port}`;
     console.log('');
     console.log('  ┌───────────────────────────────────────────────┐');
-    console.log('  │            Quill Launcher  v1.0.0             │');
-    console.log('  │   open · feather-light · no lock-in · MIT     │');
+    console.log('  │             Horus Client  v2.0.0              │');
+    console.log('  │     open · lightweight · no lock-in · MIT     │');
     console.log('  └───────────────────────────────────────────────┘');
     console.log(`   UI:        ${addr}`);
     console.log(`   Data dir:  ${dataDir}`);
     console.log('');
-    if (args.open && !process.env.CI && !process.env.QUILL_NO_OPEN) {
-      const cmd = process.platform === 'win32' ? 'explorer'
-        : process.platform === 'darwin' ? 'open' : 'xdg-open';
-      try { spawn(cmd, [addr], { detached: true, stdio: 'ignore' }).unref(); } catch { /* headless */ }
+    if (args.open && !process.env.CI && !process.env.HORUS_NO_OPEN) {
+      try {
+        if (process.platform === 'win32') {
+          // Prefer a chromeless app window (Edge ships with Windows 10/11).
+          spawn('cmd', ['/c', `start "" msedge --app=${addr} || start "" ${addr}`], { detached: true, stdio: 'ignore', shell: false }).unref();
+        } else {
+          const cmd = process.platform === 'darwin' ? 'open' : 'xdg-open';
+          spawn(cmd, [addr], { detached: true, stdio: 'ignore' }).unref();
+        }
+      } catch { /* headless */ }
     }
   });
 
   server.on('error', (e) => {
-    console.error(`[quill] ${e.message}`);
+    console.error(`[horus] ${e.message}`);
     process.exit(1);
   });
 }
 
 main().catch((e) => {
-  console.error('[quill] fatal:', e);
+  console.error('[horus] fatal:', e);
   process.exit(1);
 });

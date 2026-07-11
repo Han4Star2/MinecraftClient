@@ -1,11 +1,11 @@
 {
-  "name": "quill-launcher",
-  "version": "1.0.0",
-  "description": "Quill — an open, feather-light Minecraft launcher. Feather-style UI, zero dependencies, no lock-in.",
+  "name": "horus-client",
+  "version": "2.0.0",
+  "description": "Horus Client — the open Minecraft client-launcher: mods, shop with earnable coins, cosmetics, minigames, social. Zero dependencies.",
   "type": "module",
   "main": "server/index.js",
   "bin": {
-    "quill": "./server/index.js"
+    "horus": "./server/index.js"
   },
   "scripts": {
     "start": "node server/index.js",

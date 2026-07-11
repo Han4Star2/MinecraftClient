@@ -211,26 +211,46 @@ async function renderInstalled(host) {
   }
 }
 
-/* ------------------------------------------------------------- Modrinth */
+/* ------------------------------------------- mod marketplace (2 sources) */
+
+let source = 'modrinth';
 
 function renderModrinth(host) {
   host.innerHTML = `<div class="mods-section-label">${esc(t('mods.getMore'))}</div>`;
   const card = el(`
     <div class="card pad">
-      <div class="row">
-        <div class="search-box grow">
+      <div class="row wrap">
+        <div class="tabs">
+          <button class="tab src-tab ${source === 'modrinth' ? 'active' : ''}" data-src="modrinth">Modrinth</button>
+          <button class="tab src-tab ${source === 'curseforge' ? 'active' : ''}" data-src="curseforge">CurseForge</button>
+        </div>
+        <div class="search-box grow" style="min-width:180px">
           ${icon('search')}
-          <input class="input" placeholder="${esc(t('mods.browse'))} — sodium, iris, lithium…" spellcheck="false">
+          <input class="input" placeholder="${esc(t('mods.browse'))} — sodium, iris, jei…" spellcheck="false">
         </div>
         <button class="btn dark b-go">${icon('search')}<span>${esc(t('mods.search'))}</span></button>
       </div>
       <div class="mr-results col" style="gap:8px;margin-top:14px"></div>
-      <div class="tiny faint" style="margin-top:10px">Open ecosystem: Quill installs standard jars from Modrinth into the profile's <span class="mono">mods/</span> folder — the same files any launcher can use.</div>
+      <div class="tiny faint src-hint" style="margin-top:10px"></div>
     </div>`);
   host.appendChild(card);
 
   const input = card.querySelector('input');
   const results = card.querySelector('.mr-results');
+  const hint = card.querySelector('.src-hint');
+  const paintHint = () => {
+    hint.innerHTML = source === 'modrinth'
+      ? 'Open ecosystem: standard jars land in the profile\'s <span class="mono">mods/</span> folder — usable by any launcher. No API key needed.'
+      : 'CurseForge requires a free personal API key (<span class="mono">console.curseforge.com</span>) — set it in Settings → Network. Files are the same plain jars.';
+  };
+  paintHint();
+
+  card.querySelectorAll('.src-tab').forEach((b) => b.addEventListener('click', () => {
+    source = b.dataset.src;
+    card.querySelectorAll('.src-tab').forEach((x) => x.classList.toggle('active', x === b));
+    results.innerHTML = '';
+    paintHint();
+  }));
 
   const go = async () => {
     const q = input.value.trim();
@@ -239,7 +259,7 @@ function renderModrinth(host) {
     results.innerHTML = `<div class="progress indeterminate"><i></i></div>`;
     try {
       const profile = selectedProfile();
-      const { hits } = await api.get(`api/modrinth/search?q=${encodeURIComponent(q)}&version=${encodeURIComponent(profile.version)}&loader=${encodeURIComponent(profile.loader)}`);
+      const { hits } = await api.get(`api/${source}/search?q=${encodeURIComponent(q)}&version=${encodeURIComponent(profile.version)}&loader=${encodeURIComponent(profile.loader)}`);
       results.innerHTML = '';
       if (!hits.length) { results.innerHTML = '<div class="muted small">No results.</div>'; return; }
       for (const hit of hits.slice(0, 8)) {
@@ -256,7 +276,12 @@ function renderModrinth(host) {
         row.querySelector('button').addEventListener('click', async (e) => {
           e.target.closest('button').disabled = true;
           try {
-            await api.post(`api/modrinth/install`, { projectId: hit.project_id, profileId: profile.id });
+            const payload = source === 'modrinth'
+              ? { projectId: hit.project_id, profileId: profile.id }
+              : { modId: hit.project_id, profileId: profile.id };
+            await api.post(`api/${source}/install`, payload);
+            const { questProgress } = await import('../economy.js');
+            questProgress('q-mod-install');
             toast(`${hit.title} installed to mods/`);
           } catch (err) {
             toast(err.message, 'err');
@@ -266,7 +291,7 @@ function renderModrinth(host) {
         results.appendChild(row);
       }
     } catch (e) {
-      results.innerHTML = `<div class="muted small">Modrinth: ${esc(e.message)}</div>`;
+      results.innerHTML = `<div class="muted small">${esc(source)}: ${esc(e.message)}</div>`;
     }
   };
   card.querySelector('.b-go').addEventListener('click', go);

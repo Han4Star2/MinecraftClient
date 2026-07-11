@@ -1,5 +1,5 @@
 /* Persistent state: settings + profiles as plain JSON on disk.
-   Default location is ~/.quill; `--portable` (or QUILL_DATA) keeps everything
+   Default location is ~/.horus; `--portable` (or HORUS_DATA) keeps everything
    next to the app — no registry, no hidden databases, no lock-in. */
 
 import os from 'node:os';
@@ -29,6 +29,8 @@ export const DEFAULT_SETTINGS = {
   proxy: '',
   downloadConcurrency: 4,
   metaMirror: '',
+  curseforgeKey: '',
+  theme: 'dark',
   accountName: 'Player',
   accountType: 'offline',
   msaClientId: '',
@@ -42,8 +44,8 @@ const DEFAULT_PROFILES = [
 
 export async function initStore({ portable = false, data = '' } = {}) {
   dataDir = data
-    || process.env.QUILL_DATA
-    || (portable ? path.resolve('data') : path.join(os.homedir(), '.quill'));
+    || process.env.HORUS_DATA
+    || (portable ? path.resolve('data') : path.join(os.homedir(), '.horus'));
   await ensureDir(dataDir);
   settings = { ...DEFAULT_SETTINGS, ...(await readJson(settingsFile(), {})) };
   profiles = await readJson(profilesFile(), null);
@@ -109,7 +111,7 @@ export async function upsertProfile(id, data) {
     id,
     name: String(data.name || id).slice(0, 80),
     version: String(data.version || '1.21.5').slice(0, 40),
-    loader: ['vanilla', 'fabric', 'forge', 'neoforge', 'quilt'].includes(data.loader) ? data.loader : 'vanilla',
+    loader: ['vanilla', 'fabric', 'forge', 'neoforge', 'quilt', 'bedrock'].includes(data.loader) ? data.loader : 'vanilla',
     ramMb: Math.min(65536, Math.max(512, Number(data.ramMb) || 2048)),
     javaPath: String(data.javaPath || '').slice(0, 400),
     jvmArgs: String(data.jvmArgs || '').slice(0, 1000),
@@ -134,6 +136,27 @@ export async function touchProfile(id, patch) {
   if (!p) return;
   Object.assign(p, patch);
   await writeJson(profilesFile(), profiles);
+}
+
+/* ---------------------------------------------------------------- economy */
+
+const economyFile = () => path.join(dataDir, 'economy.json');
+let economy = null;
+
+export async function getEconomy() {
+  if (economy === null) economy = await readJson(economyFile(), null);
+  return economy;
+}
+
+export async function putEconomy(data) {
+  // Light validation — Horus is a single-user local app; the client owns
+  // the economy logic, the server just persists it durably.
+  if (!data || typeof data !== 'object' || typeof data.coins !== 'number' || !Array.isArray(data.owned)) {
+    throw new Error('invalid economy payload');
+  }
+  economy = data;
+  await writeJson(economyFile(), economy);
+  return economy;
 }
 
 /** Game directory for a profile (isolated by default, overridable). */

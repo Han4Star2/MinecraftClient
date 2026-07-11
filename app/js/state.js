@@ -1,12 +1,12 @@
 /* Central client state.
    - Always persisted to localStorage (open JSON — copy it, edit it, sync it).
    - When the backend is connected, settings & profiles are loaded from and
-     written back to the server store (~/.quill or ./data in portable mode). */
+     written back to the server store (~/.horus or ./data in portable mode). */
 
 import { defaultProfiles, defaultSettings, HUD_DEFAULTS, MODS } from './catalog.js';
 import { api, isConnected } from './api.js';
 
-const LS_KEY = 'quill.state.v1';
+const LS_KEY = 'horus.state.v1';
 
 export const state = {
   settings: defaultSettings(),
@@ -15,7 +15,8 @@ export const state = {
   modOverrides: {},            // modId → bool (built-in module toggles)
   modConfigs: {},              // modId → { key: value }
   hud: null,                   // array of HUD elements (lazy default)
-  cosmetics: { cape: 'cape-quill', hat: null, wings: null, bandana: null, backpack: null },
+  cosmetics: { cape: 'cape-solid-crimson', hat: null, wings: null, pet: null, nametag: null },
+  economy: null,               // coins/owned/quests — lazily seeded by economy.js
   versions: [],                // populated from backend or demo list
   javas: [],
 };
@@ -45,6 +46,7 @@ export function loadLocal() {
     if (data.modConfigs) state.modConfigs = data.modConfigs;
     if (Array.isArray(data.hud)) state.hud = data.hud;
     if (data.cosmetics) state.cosmetics = { ...state.cosmetics, ...data.cosmetics };
+    if (data.economy) state.economy = data.economy;
   } catch { /* corrupted local state → fall back to defaults */ }
 }
 
@@ -62,10 +64,12 @@ export function save(what = 'state') {
         modConfigs: state.modConfigs,
         hud: state.hud,
         cosmetics: state.cosmetics,
+        economy: state.economy,
       }));
     } catch { /* storage full/blocked — non-fatal */ }
     if (isConnected()) {
       api.put('api/settings', state.settings).catch(() => {});
+      if (state.economy) api.put('api/economy', state.economy).catch(() => {});
     }
   }, 150);
   notify(what);
@@ -74,14 +78,16 @@ export function save(what = 'state') {
 /** Pull authoritative data from the backend after connecting. */
 export async function syncFromServer() {
   try {
-    const [settings, profiles, versions, javas] = await Promise.all([
+    const [settings, profiles, versions, javas, economyData] = await Promise.all([
       api.get('api/settings'),
       api.get('api/profiles'),
       api.get('api/versions').catch(() => ({ versions: [] })),
       api.get('api/javas').catch(() => ({ javas: [] })),
+      api.get('api/economy').catch(() => null),
     ]);
     if (settings && typeof settings === 'object') state.settings = { ...defaultSettings(), ...settings };
     if (Array.isArray(profiles)) state.profiles = profiles;
+    if (economyData && typeof economyData.coins === 'number') state.economy = economyData;
     state.versions = versions.versions || [];
     state.javas = javas.javas || [];
     notify('sync');

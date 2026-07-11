@@ -1,4 +1,4 @@
-/* Quill Launcher — boot, hash router and sidebar. */
+/* Horus Launcher — boot, hash router and sidebar. */
 
 import { icon } from './icons.js';
 import { t, setLang, detectLang, getLang } from './i18n.js';
@@ -9,24 +9,32 @@ import { drawFace } from './skin.js';
 import { DEMO_VERSIONS } from './catalog.js';
 
 import * as home from './pages/home.js';
+import * as news from './pages/news.js';
 import * as library from './pages/library.js';
 import * as mods from './pages/mods.js';
 import * as hud from './pages/hud.js';
+import * as shop from './pages/shop.js';
 import * as cosmetics from './pages/cosmetics.js';
-import * as friends from './pages/friends.js';
+import * as minigames from './pages/minigames.js';
+import * as social from './pages/social.js';
+import * as worlds from './pages/worlds.js';
 import * as screenshots from './pages/screenshots.js';
 import * as settings from './pages/settings.js';
 
-export const APP_VERSION = '1.0.0';
-export const BUILD = 'release/open';
+export { APP_VERSION, BUILD } from './version.js';
+import { APP_VERSION } from './version.js';
 
 const routes = {
   home: { mod: home, icon: 'home', label: 'nav.home' },
+  news: { mod: news, icon: 'list', label: 'nav.news' },
   library: { mod: library, icon: 'library', label: 'nav.library' },
   mods: { mod: mods, icon: 'mods', label: 'nav.mods' },
   hud: { mod: hud, icon: 'hud', label: 'nav.hud' },
+  shop: { mod: shop, icon: 'gift', label: 'nav.shop' },
   cosmetics: { mod: cosmetics, icon: 'shirt', label: 'nav.cosmetics' },
-  friends: { mod: friends, icon: 'users', label: 'nav.friends' },
+  minigames: { mod: minigames, icon: 'gamepad', label: 'nav.minigames' },
+  social: { mod: social, icon: 'users', label: 'nav.social' },
+  worlds: { mod: worlds, icon: 'globe', label: 'nav.worlds' },
   screenshots: { mod: screenshots, icon: 'camera', label: 'nav.screenshots' },
   settings: { mod: settings, icon: 'settings', label: 'nav.settings' },
 };
@@ -68,12 +76,12 @@ function renderSidebar() {
   const logo = el(`
     <div class="side-logo">
       <span style="color:#fff">${icon('logo')}</span>
-      <div class="wordmark"><b>QUILL</b><span>CLIENT</span></div>
+      <div class="wordmark"><b>HORUS</b><span>CLIENT</span></div>
     </div>`);
   side.appendChild(logo);
 
   const nav = el('<nav class="side-nav" aria-label="Main"></nav>');
-  const order = ['home', 'library', 'mods', 'hud', 'cosmetics', null, 'friends', 'screenshots', null, 'settings'];
+  const order = ['home', 'news', 'library', 'mods', 'hud', null, 'shop', 'cosmetics', 'minigames', null, 'social', 'worlds', 'screenshots', null, 'settings'];
   for (const key of order) {
     if (!key) { nav.appendChild(el('<div class="nav-sep"></div>')); continue; }
     const r = routes[key];
@@ -116,6 +124,7 @@ export function applySettingsSideEffects() {
   const s = state.settings;
   setLang(s.language === 'auto' ? detectLang() : s.language);
   document.body.classList.toggle('no-anim', !s.animations);
+  document.body.dataset.theme = s.theme || 'dark';
   if (s.accent && /^#[0-9a-f]{6}$/i.test(s.accent)) {
     const root = document.documentElement.style;
     root.setProperty('--accent', s.accent);
@@ -157,6 +166,15 @@ async function boot() {
   render();
 
   window.addEventListener('hashchange', render);
+
+  // Server API demo: overlay payloads pushed by game servers surface as toasts.
+  const { onEvent } = await import('./api.js');
+  const { toast } = await import('./components.js');
+  onEvent((evt) => {
+    if (evt.type === 'overlay' && evt.payload) {
+      toast(`${evt.payload.title ? `${evt.payload.title}: ` : ''}${evt.payload.text}`, evt.payload.kind || 'info', 5000);
+    }
+  });
 
   subscribe((what) => {
     // Language or account changes affect the chrome around the page.

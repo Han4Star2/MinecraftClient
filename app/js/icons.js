@@ -1,14 +1,18 @@
 /* Compact inline SVG icon set (stroke-based, 24×24 viewBox). No icon font,
-   no external requests — part of keeping Quill lightweight and offline-able. */
+   no external requests — part of keeping Horus lightweight and offline-able. */
 
 const S = (inner, extra = '') =>
   `<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ${extra} aria-hidden="true">${inner}</svg>`;
 
 export const icons = {
-  logo: `<svg viewBox="0 0 32 32" width="1em" height="1em" fill="none" aria-hidden="true">
-    <path d="M25.4 5.2c-6.3.7-11.8 3.4-15 8.2-2.1 3-3.2 6.7-3.6 10.9l-2 3.8 1.7.9 2-3.7c4.2-.5 7.8-1.9 10.6-4.3 3.7-3.1 5.9-8.3 6.3-15.8z" fill="currentColor"/>
-    <path d="M8.5 22.5C13 15 18 10.5 24 7.5" stroke="#0f1013" stroke-width="1.1" stroke-linecap="round"/>
-    <circle cx="21" cy="9" r="0.7" fill="#0f1013"/><circle cx="17.5" cy="12.5" r="0.7" fill="#0f1013"/><circle cx="14" cy="16" r="0.7" fill="#0f1013"/>
+  /* Eye of Horus — the client's mark. */
+  logo: `<svg viewBox="0 0 32 32" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M3.5 12.5C7.5 8 12 6 16 6s8.5 2 12.5 6.5"/>
+    <path d="M4.5 16.5c3.5-4.2 7.5-6.3 11.5-6.3s8 2.1 11.5 6.3c-3.5 4.2-7.5 6.3-11.5 6.3S8 20.7 4.5 16.5z" stroke-width="1.8"/>
+    <circle cx="16" cy="16.4" r="3.5" fill="currentColor" stroke="none"/>
+    <circle cx="17.1" cy="15.3" r="0.9" fill="#0f1013" stroke="none"/>
+    <path d="M10.7 22 8.2 27.5"/>
+    <path d="M21.3 22c1.2 3.2 4.2 4.4 5.4 2.2.9-1.8-.6-3.6-2.7-3.2"/>
   </svg>`,
 
   home: S('<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/>'),

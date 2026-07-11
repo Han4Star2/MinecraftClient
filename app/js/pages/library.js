@@ -129,6 +129,10 @@ function editProfile(existing, repaint) {
           </select>
         </div>
       </div>
+      <div class="hint f-bedrock-hint hidden" style="color:var(--gold)">
+        Bedrock Edition launches the Microsoft-Store app via <span class="mono">minecraft://</span> (Windows only).
+        The version dropdown is ignored — the installed Bedrock build starts.
+      </div>
       <div class="field">
         <label>${esc(t('lib.ram'))}</label>
         <div class="f-ram"></div>
@@ -152,6 +156,14 @@ function editProfile(existing, repaint) {
         </div>
       </details>
     </div>`);
+
+  const loaderSel = body.querySelector('.f-loader');
+  const bedrockHint = () => {
+    body.querySelector('.f-bedrock-hint').classList.toggle('hidden', loaderSel.value !== 'bedrock');
+    body.querySelector('.f-version').disabled = loaderSel.value === 'bedrock';
+  };
+  loaderSel.addEventListener('change', bedrockHint);
+  bedrockHint();
 
   let ram = p.ramMb || 3072;
   body.querySelector('.f-ram').appendChild(
@@ -177,7 +189,13 @@ function editProfile(existing, repaint) {
       gameDir: body.querySelector('.f-dir').value.trim(),
     };
     await upsertProfile(updated);
-    if (!existing) selectProfile(updated.id);
+    if (!existing) {
+      selectProfile(updated.id);
+      if (state.profiles.length >= 2) {
+        const { questProgress } = await import('../economy.js');
+        questProgress('q-add-profile');
+      }
+    }
     m.close();
     repaint();
     toast(existing ? t('set.saved') : `${updated.name} — ${t('lib.create')} ✓`);
@@ -192,11 +210,11 @@ function duplicate(p, repaint) {
 /* ------------------------------------------------------------ import/export */
 
 function exportProfile(p) {
-  const data = JSON.stringify({ quillProfile: 1, profile: { ...p, lastPlayed: 0, totalPlayMs: 0 } }, null, 2);
+  const data = JSON.stringify({ horusProfile: 1, profile: { ...p, lastPlayed: 0, totalPlayMs: 0 } }, null, 2);
   const blob = new Blob([data], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `${p.id}.quill.json`;
+  a.download = `${p.id}.horus.json`;
   a.click();
   URL.revokeObjectURL(a.href);
   toast(t('lib.export') + ' ✓');
@@ -213,7 +231,7 @@ function importProfile(repaint) {
       const data = JSON.parse(await file.text());
       const p = data.profile || data; // accept bare profile JSON too
       if (!p.version) throw new Error('missing "version"');
-      p.name = p.name || file.name.replace(/\.quill\.json$|\.json$/i, '');
+      p.name = p.name || file.name.replace(/\.horus\.json$|\.json$/i, '');
       p.id = newProfileId(p.name);
       p.lastPlayed = 0;
       p.totalPlayMs = p.totalPlayMs || 0;

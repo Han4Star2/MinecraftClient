@@ -91,7 +91,7 @@ function once(url, { method, headers, body, proxy, timeout, maxSize }) {
       host: u.hostname,
       port,
       path: `${u.pathname}${u.search}`,
-      headers: { 'User-Agent': 'quill-launcher/1.0 (+https://github.com/Han4Star2/MinecraftClient)', ...headers },
+      headers: { 'User-Agent': 'horus-launcher/1.0 (+https://github.com/Han4Star2/MinecraftClient)', ...headers },
       timeout,
     };
 

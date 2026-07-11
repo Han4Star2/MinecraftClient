@@ -8,6 +8,7 @@ import { el, esc, toast, fmtBytes } from './components.js';
 import { icon } from './icons.js';
 import { t } from './i18n.js';
 import { state, save } from './state.js';
+import { questProgress } from './economy.js';
 
 let dock = null;
 let demoTimers = [];
@@ -28,6 +29,7 @@ export function launchProfile(profile, opts = {}) {
   }
   active = { profile, phase: 'preparing' };
   profile.lastPlayed = Date.now();
+  questProgress('q-launch');
   save('profiles');
   openDock(profile, opts);
 
@@ -35,7 +37,7 @@ export function launchProfile(profile, opts = {}) {
     api.post('api/launch', { profileId: profile.id, server: opts.server || null })
       .catch((e) => {
         handleEvent({ type: 'launch', phase: 'failed', detail: e.message });
-        handleEvent({ type: 'log', line: `[Quill] ${e.message}`, stream: 'err' });
+        handleEvent({ type: 'log', line: `[Horus] ${e.message}`, stream: 'err' });
       });
   } else {
     simulate(profile, opts);
@@ -109,7 +111,7 @@ function log(line, stream = 'out') {
   const con = dock.querySelector('.d-console');
   const cls = /ERROR|Exception|error:/i.test(line) || stream === 'err' ? 'ln-err'
     : /WARN/i.test(line) ? 'ln-warn'
-    : /\[Quill]/.test(line) ? 'ln-ok' : '';
+    : /\[Horus]/.test(line) ? 'ln-ok' : '';
   const div = document.createElement('div');
   if (cls) div.className = cls;
   div.textContent = line;
@@ -181,24 +183,24 @@ function handleEvent(evt) {
 function simulate(profile, opts) {
   const at = (ms, fn) => demoTimers.push(setTimeout(fn, ms));
   const files = ['client.jar', 'lwjgl-3.3.3.jar', 'fabric-loader.jar', 'sodium.jar', 'assets/index.json', 'natives/linux'];
-  emitLocal({ type: 'log', line: `[Quill] Demo launch — start the backend (node server/index.js) for real launches.` });
-  emitLocal({ type: 'log', line: `[Quill] Resolving ${profile.version} (${profile.loader})…` });
+  emitLocal({ type: 'log', line: `[Horus] Demo launch — start the backend (node server/index.js) for real launches.` });
+  emitLocal({ type: 'log', line: `[Horus] Resolving ${profile.version} (${profile.loader})…` });
   at(500, () => emitLocal({ type: 'launch', phase: 'downloading', detail: 'verifying 6 files' }));
   files.forEach((f, i) => {
     at(650 + i * 320, () => {
       emitLocal({ type: 'progress', done: i + 1, total: files.length, file: f, bytes: 3.2e6 * (i + 1) });
-      emitLocal({ type: 'log', line: `[Quill] ✓ ${f} (sha1 ok)` });
+      emitLocal({ type: 'log', line: `[Horus] ✓ ${f} (sha1 ok)` });
     });
   });
   at(650 + files.length * 320 + 200, () => {
     emitLocal({ type: 'launch', phase: 'launching', detail: `java -Xmx${Math.round((profile.ramMb || 3072) / 1024)}G …` });
-    emitLocal({ type: 'log', line: `[Quill] Command: java -Xmx${profile.ramMb || 3072}M -cp … net.minecraft.client.main.Main` });
+    emitLocal({ type: 'log', line: `[Horus] Command: java -Xmx${profile.ramMb || 3072}M -cp … net.minecraft.client.main.Main` });
   });
   at(650 + files.length * 320 + 1300, () => {
     emitLocal({ type: 'launch', phase: 'running' });
     emitLocal({ type: 'log', line: `[Render thread/INFO]: Setting user: ${state.settings.accountName || 'Player'}` });
     if (opts.server) emitLocal({ type: 'log', line: `[Render thread/INFO]: Connecting to ${opts.server}` });
     emitLocal({ type: 'log', line: `[Render thread/INFO]: Backend library: LWJGL 3.3.3` });
-    emitLocal({ type: 'log', line: `[Quill] Demo session — no real game was started.` });
+    emitLocal({ type: 'log', line: `[Horus] Demo session — no real game was started.` });
   });
 }

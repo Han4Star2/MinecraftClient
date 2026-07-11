@@ -14,8 +14,10 @@ import { startLaunch, cancelLaunch, killGame, launchState } from './launcher.js'
 import { listMods, toggleMod, deleteMod, modsDir } from './mods.js';
 import { searchMods, installMod } from './modrinth.js';
 import { startMsa, msaStatus, signOut } from './msa.js';
+import { pingServer } from './ping.js';
+import { cfSearch, cfInstall } from './curseforge.js';
 
-const VERSION = '1.0.0';
+const VERSION = '2.0.0';
 
 function openInFileManager(dir) {
   const cmd = process.platform === 'win32' ? 'explorer'
@@ -35,7 +37,7 @@ export async function handleApi(req, res, url) {
     /* ------------------------------------------------------------- status */
     if (method === 'GET' && pathname === '/api/status') {
       sendJson(res, 200, {
-        name: 'quill',
+        name: 'horus',
         version: VERSION,
         os: process.platform,
         arch: process.arch,
@@ -52,6 +54,20 @@ export async function handleApi(req, res, url) {
       if (method === 'PUT') {
         const body = await readJsonBody(req);
         sendJson(res, 200, await store.putSettings(body));
+        return true;
+      }
+    }
+
+    /* ------------------------------------------------------------ economy */
+    if (pathname === '/api/economy') {
+      if (method === 'GET') {
+        // 200 with an empty object before first seed — the client treats a
+        // payload without numeric `coins` as "not seeded yet".
+        sendJson(res, 200, (await store.getEconomy()) || {});
+        return true;
+      }
+      if (method === 'PUT') {
+        sendJson(res, 200, await store.putEconomy(await readJsonBody(req)));
         return true;
       }
     }
@@ -141,6 +157,23 @@ export async function handleApi(req, res, url) {
       return true;
     }
 
+    /* ---------------------------------------------------------- curseforge */
+    if (method === 'GET' && pathname === '/api/curseforge/search') {
+      sendJson(res, 200, await cfSearch({
+        query: url.searchParams.get('q') || '',
+        version: url.searchParams.get('version') || '',
+        loader: url.searchParams.get('loader') || '',
+      }));
+      return true;
+    }
+    if (method === 'POST' && pathname === '/api/curseforge/install') {
+      const { modId, profileId } = await readJsonBody(req);
+      const profile = store.getProfile(profileId);
+      if (!profile) { sendJson(res, 404, { error: 'unknown profile' }); return true; }
+      sendJson(res, 200, await cfInstall({ modId, profile }));
+      return true;
+    }
+
     /* ------------------------------------------------------------- launch */
     if (method === 'POST' && pathname === '/api/launch') {
       const { profileId, server, dryRun } = await readJsonBody(req);
@@ -208,6 +241,59 @@ export async function handleApi(req, res, url) {
     if (method === 'POST' && pathname === '/api/msa/signout') {
       await signOut();
       sendJson(res, 200, { signedOut: true });
+      return true;
+    }
+
+    /* ------------------------------------------------------- server ping */
+    if (method === 'GET' && pathname === '/api/ping') {
+      const host = String(url.searchParams.get('host') || '');
+      const port = Math.min(65535, Math.max(1, Number(url.searchParams.get('port')) || 25565));
+      if (!/^[a-zA-Z0-9._-]{1,253}$/.test(host)) { sendJson(res, 400, { error: 'invalid host' }); return true; }
+      sendJson(res, 200, await pingServer(host, port));
+      return true;
+    }
+
+    /* ------------------------------------------------------------- worlds */
+    if (method === 'GET' && pathname === '/api/worlds') {
+      const worlds = [];
+      for (const profile of store.getProfiles()) {
+        const savesDir = path.join(store.profileGameDir(profile), 'saves');
+        let entries = [];
+        try { entries = await fsp.readdir(savesDir, { withFileTypes: true }); } catch { continue; }
+        for (const e of entries) {
+          if (!e.isDirectory()) continue;
+          const worldPath = path.join(savesDir, e.name);
+          const st = await fsp.stat(worldPath);
+          let iconData = null;
+          try {
+            const iconBuf = await fsp.readFile(path.join(worldPath, 'icon.png'));
+            if (iconBuf.length < 128 * 1024) iconData = `data:image/png;base64,${iconBuf.toString('base64')}`;
+          } catch { /* no icon */ }
+          worlds.push({
+            profileId: profile.id,
+            profileName: profile.name,
+            version: profile.version,
+            name: e.name,
+            path: worldPath,
+            mtime: st.mtimeMs,
+            icon: iconData,
+          });
+        }
+      }
+      worlds.sort((a, b) => b.mtime - a.mtime);
+      sendJson(res, 200, { worlds });
+      return true;
+    }
+
+    /* --------------------------------------------- server API (overlays) */
+    if (method === 'POST' && pathname === '/api/serverapi/overlay') {
+      const body = await readJsonBody(req);
+      events.emit({ type: 'overlay', payload: {
+        title: String(body.title || '').slice(0, 60),
+        text: String(body.text || '').slice(0, 240),
+        kind: ['info', 'ok', 'err'].includes(body.kind) ? body.kind : 'info',
+      } });
+      sendJson(res, 200, { delivered: true });
       return true;
     }
 

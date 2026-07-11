@@ -9,7 +9,7 @@ import { listEntries, readEntry, extractZip, readZipFile } from '../server/zip.j
 test('zip: list + read deflated and stored entries', async () => {
   for (const store of [false, true]) {
     const zip = buildZip({
-      'hello.txt': 'hello quill',
+      'hello.txt': 'hello horus',
       'dir/nested.json': JSON.stringify({ ok: true }),
       'binary.bin': Buffer.from([0, 1, 2, 250, 255]),
     }, { store });
@@ -17,19 +17,19 @@ test('zip: list + read deflated and stored entries', async () => {
     const entries = listEntries(zip);
     assert.equal(entries.length, 3);
     const byName = Object.fromEntries(entries.map((e) => [e.name, e]));
-    assert.equal(readEntry(zip, byName['hello.txt']).toString(), 'hello quill');
+    assert.equal(readEntry(zip, byName['hello.txt']).toString(), 'hello horus');
     assert.deepEqual(JSON.parse(readEntry(zip, byName['dir/nested.json']).toString()), { ok: true });
     assert.deepEqual([...readEntry(zip, byName['binary.bin'])], [0, 1, 2, 250, 255]);
   }
 });
 
 test('zip: extract with filter and zip-slip protection', async (t) => {
-  const dir = await fsp.mkdtemp(path.join(os.tmpdir(), 'quill-zip-'));
+  const dir = await fsp.mkdtemp(path.join(os.tmpdir(), 'horus-zip-'));
   t.after(() => fsp.rm(dir, { recursive: true, force: true }));
 
   const zip = buildZip({
     'META-INF/MANIFEST.MF': 'Manifest-Version: 1.0',
-    'libquill.so': 'ELF-pretend',
+    'libhorus.so': 'ELF-pretend',
     'sub/data.txt': 'data',
     '../escape.txt': 'evil',
   });
@@ -38,14 +38,14 @@ test('zip: extract with filter and zip-slip protection', async (t) => {
 
   const out = path.join(dir, 'out');
   const written = await extractZip(zipPath, out, (n) => !n.startsWith('META-INF/'));
-  assert.deepEqual(written.sort(), ['libquill.so', 'sub/data.txt']);
-  assert.equal(await fsp.readFile(path.join(out, 'libquill.so'), 'utf8'), 'ELF-pretend');
+  assert.deepEqual(written.sort(), ['libhorus.so', 'sub/data.txt']);
+  assert.equal(await fsp.readFile(path.join(out, 'libhorus.so'), 'utf8'), 'ELF-pretend');
   // zip-slip entry must not land outside the target directory
   await assert.rejects(fsp.access(path.join(dir, 'escape.txt')));
 });
 
 test('zip: readZipFile finds mod metadata', async (t) => {
-  const dir = await fsp.mkdtemp(path.join(os.tmpdir(), 'quill-zip-'));
+  const dir = await fsp.mkdtemp(path.join(os.tmpdir(), 'horus-zip-'));
   t.after(() => fsp.rm(dir, { recursive: true, force: true }));
   const jar = path.join(dir, 'mod.jar');
   await fsp.writeFile(jar, buildZip({

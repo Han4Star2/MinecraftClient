@@ -8,7 +8,7 @@ import { downloadAll } from './downloads.js';
 import { getSettings } from './store.js';
 import { modsDir } from './mods.js';
 
-const BASE = () => (process.env.QUILL_MODRINTH_BASE || 'https://api.modrinth.com/v2').replace(/\/+$/, '');
+const BASE = () => (process.env.HORUS_MODRINTH_BASE || 'https://api.modrinth.com/v2').replace(/\/+$/, '');
 
 export async function searchMods({ query, version, loader, limit = 10 }) {
   const proxy = getSettings().proxy || undefined;

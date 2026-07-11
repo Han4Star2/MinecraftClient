@@ -9,7 +9,7 @@ import { state, selectedProfile, selectProfile } from '../state.js';
 import { PINNED_SERVERS } from '../catalog.js';
 import { drawFace } from '../skin.js';
 import { launchProfile } from '../launch.js';
-import { APP_VERSION, BUILD } from '../main.js';
+import { APP_VERSION, BUILD } from '../version.js';
 
 export function render(root) {
   const profile = selectedProfile();
@@ -32,7 +32,7 @@ export function render(root) {
       <div class="hero">
         <div class="hero-logo">
           <span style="color:#fff">${icon('logo')}</span>
-          <div class="word"><b>QUILL</b> <span>CLIENT</span></div>
+          <div class="word"><b>HORUS</b> <span>CLIENT</span></div>
         </div>
 
         <button class="hero-profile" title="${esc(t('lib.title'))}">
@@ -60,7 +60,7 @@ export function render(root) {
         </div>
       </div>
 
-      <div class="hero-version">Quill ${APP_VERSION} (${BUILD}) · ${esc(profile ? profile.version : '—')}</div>
+      <div class="hero-version">Horus ${APP_VERSION} (${BUILD}) · ${esc(profile ? profile.version : '—')}</div>
     </div>`);
 
   /* account chip */
@@ -114,7 +114,7 @@ export function render(root) {
   });
 
   wrap.querySelector('.hero-quit').addEventListener('click', async () => {
-    toast('Closing Quill…', 'info', 1500);
+    toast('Closing Horus…', 'info', 1500);
     try { await fetch('api/quit', { method: 'POST' }); } catch { /* demo */ }
     setTimeout(() => window.close(), 300);
   });

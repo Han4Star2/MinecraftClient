@@ -6,7 +6,7 @@ import { t, languages } from '../i18n.js';
 import { el, esc, toast, settingRow, control, makeSlider, makeSwitch } from '../components.js';
 import { state, save } from '../state.js';
 import { api, isConnected, serverStatus } from '../api.js';
-import { APP_VERSION } from '../main.js';
+import { APP_VERSION } from '../version.js';
 
 const CATS = [
   { id: 'general', label: 'set.general', icon: 'settings' },
@@ -69,6 +69,8 @@ export function render(root) {
     const g = group(t('set.general'));
     g.appendChild(settingRow(t('set.language'), t('set.language.d'),
       control({ t: 'select', opts: ['auto', ...languages.map((l) => l.id)] }, s.language, (v) => { s.language = v; save('settings'); })));
+    g.appendChild(settingRow('Theme', 'Dark, Midnight, Sandstone or Light — plus the accent color below',
+      control({ t: 'select', opts: ['dark', 'midnight', 'sand', 'light'] }, s.theme || 'dark', (v) => { s.theme = v; save('settings'); })));
     g.appendChild(settingRow(t('set.animations'), t('set.animations.d'),
       makeSwitch(s.animations, (v) => { s.animations = v; save('settings'); })));
     const accent = settingRow(t('set.accent'), t('set.accent.d'),
@@ -89,7 +91,7 @@ export function render(root) {
       makeSwitch(s.autoUpdate, (v) => { s.autoUpdate = v; save('settings'); })));
 
     const g2 = group('Privacy');
-    g2.appendChild(el(`<div class="setting-row"><div class="s-label"><div class="name">Telemetry</div><div class="desc">Quill collects nothing. There is no analytics code to turn off.</div></div><span class="badge free">NONE — EVER</span></div>`));
+    g2.appendChild(el(`<div class="setting-row"><div class="s-label"><div class="name">Telemetry</div><div class="desc">Horus collects nothing. There is no analytics code to turn off.</div></div><span class="badge free">NONE — EVER</span></div>`));
   }
 
   /* ------------------------------------------------------------ performance */
@@ -110,7 +112,7 @@ export function render(root) {
     g.appendChild(settingRow('VSync', null, makeSwitch(s.vsync, (v) => { s.vsync = v; save('settings'); })));
 
     const g2 = group('Launcher footprint');
-    g2.appendChild(el(`<div class="setting-row"><div class="s-label"><div class="name">Why Quill stays light</div><div class="desc">No Electron, no bundled browser: the backend is a dependency-free Node process (~35 MB RSS) and this UI runs in the browser/webview you already have. Turn off animations above to go even lower.</div></div><span class="badge free">~35 MB</span></div>`));
+    g2.appendChild(el(`<div class="setting-row"><div class="s-label"><div class="name">Why Horus stays light</div><div class="desc">No Electron, no bundled browser: the backend is a dependency-free Node process (~35 MB RSS) and this UI runs in the browser/webview you already have. Turn off animations above to go even lower.</div></div><span class="badge free">~35 MB</span></div>`));
   }
 
   /* -------------------------------------------------------------- minecraft */
@@ -123,7 +125,7 @@ export function render(root) {
     g.appendChild(settingRow('Resolution', null,
       control({ t: 'select', opts: ['auto', '1280×720', '1600×900', '1920×1080', '2560×1440'] }, s.resolution, (v) => { s.resolution = v; save('settings'); })));
     g.appendChild(settingRow('Fullscreen', null, makeSwitch(s.fullscreen, (v) => { s.fullscreen = v; save('settings'); })));
-    g.appendChild(settingRow('Shared game directory', 'Empty = isolated per-profile directories (recommended). Point it at your existing .minecraft to reuse it — Quill speaks the vanilla format.',
+    g.appendChild(settingRow('Shared game directory', 'Empty = isolated per-profile directories (recommended). Point it at your existing .minecraft to reuse it — Horus speaks the vanilla format.',
       control({ t: 'text' }, s.gameDir, (v) => { s.gameDir = v; save('settings'); })));
   }
 
@@ -134,8 +136,10 @@ export function render(root) {
       control({ t: 'text' }, s.proxy, (v) => { s.proxy = v; save('settings'); })));
     g.appendChild(settingRow('Parallel downloads', null,
       control({ t: 'slider', min: 1, max: 16, def: 4 }, s.downloadConcurrency, (v) => { s.downloadConcurrency = v; save('settings'); })));
-    g.appendChild(settingRow('Version meta mirror', 'Alternative to piston-meta.mojang.com — no vendor lock-in, point Quill anywhere',
+    g.appendChild(settingRow('Version meta mirror', 'Alternative to piston-meta.mojang.com — no vendor lock-in, point Horus anywhere',
       control({ t: 'text' }, s.metaMirror, (v) => { s.metaMirror = v; save('settings'); })));
+    g.appendChild(settingRow('CurseForge API key', 'Free at console.curseforge.com — enables the CurseForge tab on the Mods page (Modrinth needs no key)',
+      control({ t: 'text' }, s.curseforgeKey, (v) => { s.curseforgeKey = v.trim(); save('settings'); })));
 
     const g2 = group('Cache');
     const row = el(`<div class="setting-row"><div class="s-label"><div class="name">Download cache</div><div class="desc">Verified files are reused across profiles</div></div><div class="s-ctrl"></div></div>`);
@@ -172,7 +176,7 @@ export function render(root) {
         try {
           const res = await api.post('api/msa/start');
           row.querySelector('.msa-desc').innerHTML =
-            `Go to <b>${esc(res.verification_uri)}</b> and enter code <b class="mono">${esc(res.user_code)}</b> — Quill finishes automatically.`;
+            `Go to <b>${esc(res.verification_uri)}</b> and enter code <b class="mono">${esc(res.user_code)}</b> — Horus finishes automatically.`;
           const poll = setInterval(async () => {
             try {
               const st = await api.get('api/msa/status');
@@ -206,7 +210,7 @@ export function render(root) {
         <div class="card about-hero">
           <span style="color:#fff">${icon('logo')}</span>
           <div>
-            <div style="font-size:19px;font-weight:800">Quill Launcher <span class="muted" style="font-weight:400">v${APP_VERSION}</span></div>
+            <div style="font-size:19px;font-weight:800">Horus Launcher <span class="muted" style="font-weight:400">v${APP_VERSION}</span></div>
             <div class="muted small">An open, feather-light Minecraft launcher. MIT licensed — the whole thing, not just parts.</div>
             <div class="row" style="margin-top:8px;gap:8px">
               <span class="badge free">MIT</span>
@@ -226,7 +230,7 @@ export function render(root) {
       ['Fragile with big modpacks', 'Real loaders (Fabric/Forge/Quilt/NeoForge), per-profile isolation, plain jars from Modrinth.'],
       ['Forced online account', 'Offline sessions built in; Microsoft login is optional and self-configured.'],
     ];
-    const g = el(`<div class="settings-group"><h3>Feather weaknesses → fixed in Quill</h3><div class="fix-list"></div></div>`);
+    const g = el(`<div class="settings-group"><h3>Feather weaknesses → fixed in Horus</h3><div class="fix-list"></div></div>`);
     for (const [weak, fix] of fixes) {
       g.querySelector('.fix-list').appendChild(el(`
         <div class="card fix-row">${icon('check')}<div><div class="fx-weak">${esc(weak)}</div><div class="fx-fix">${esc(fix)}</div></div></div>`));

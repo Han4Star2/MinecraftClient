@@ -1,5 +1,5 @@
 /* Programmatic Minecraft-style skin.
-   Quill ships no binary assets — the default skin is painted at runtime onto a
+   Horus ships no binary assets — the default skin is painted at runtime onto a
    64×64 canvas following the standard skin layout, so the avatar, friends list
    and the 3D cosmetics preview all work fully offline. If the backend is
    online it can substitute a real skin fetched by player name. */
@@ -179,7 +179,7 @@ export function capeTexture(style, scale = 10) {
       px(3, 6, 4, 1, style.alt); px(4, 7, 2, 1, style.alt);
       px(2, 7, 1, 1, style.alt); px(7, 7, 1, 1, style.alt);
       break;
-    case 'quill':
+    case 'horus':
       px(5, 2, 1, 10, style.alt); px(4, 3, 1, 8, style.alt); px(6, 3, 1, 6, style.alt);
       px(3, 5, 1, 4, style.alt); px(7, 4, 1, 3, style.alt);
       break;
@@ -187,9 +187,43 @@ export function capeTexture(style, scale = 10) {
       px(2, 4, 2, 2, style.alt); px(6, 4, 2, 2, style.alt);
       px(4, 6, 2, 3, style.alt); px(3, 8, 1, 2, style.alt); px(6, 8, 1, 2, style.alt);
       break;
+    case 'diamond':
+      px(4, 4, 2, 1, style.alt); px(3, 5, 4, 1, style.alt); px(2, 6, 6, 2, style.alt);
+      px(3, 8, 4, 1, style.alt); px(4, 9, 2, 1, style.alt);
+      break;
+    case 'arrow':
+      for (let k = 0; k < 4; k++) { px(2 + k, 3 + k, 1, 2, style.alt); px(7 - k, 3 + k, 1, 2, style.alt); }
+      for (let k = 0; k < 4; k++) { px(2 + k, 9 + k, 1, 2, style.alt); px(7 - k, 9 + k, 1, 2, style.alt); }
+      break;
+    case 'split':
+      px(0, 0, 5, 16, style.alt);
+      break;
+    case 'border':
+      px(0, 0, 10, 1, style.alt); px(0, 15, 10, 1, style.alt);
+      px(0, 0, 1, 16, style.alt); px(9, 0, 1, 16, style.alt);
+      px(0, 1, 10, 1, style.alt);
+      break;
   }
   // hem shading
   ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.fillRect(0, 15 * scale, 10 * scale, scale);
+  return c;
+}
+
+/** Render a Cape-Studio pixel grid (16 rows × 10 cols of hex|null) to a canvas. */
+export function capeTextureFromPixels(pixels, scale = 10, bg = '#20232a') {
+  const c = document.createElement('canvas');
+  c.width = 10 * scale;
+  c.height = 16 * scale;
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  for (let y = 0; y < 16; y++) {
+    for (let x = 0; x < 10; x++) {
+      ctx.fillStyle = pixels?.[y]?.[x] || bg;
+      ctx.fillRect(x * scale, y * scale, scale, scale);
+    }
+  }
+  ctx.fillStyle = 'rgba(0,0,0,0.22)';
   ctx.fillRect(0, 15 * scale, 10 * scale, scale);
   return c;
 }

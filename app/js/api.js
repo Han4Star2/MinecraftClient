@@ -1,5 +1,5 @@
 /* Backend transport. The UI runs in two modes:
-   - connected: served by the Quill backend (node server/index.js) → real
+   - connected: served by the Horus backend (node server/index.js) → real
      profiles, real launches, real mod folders, live SSE events.
    - demo: opened statically (or backend down) → everything still works with
      local persistence, so the interface can be explored anywhere. */
