@@ -44,26 +44,34 @@ Horus zieht eine klare Grenze, genau wie NoRisk:
 
 ## Schnellstart (Windows)
 
-Horus kommt als **echte native Windows-App** — `Horus.exe`: eigenes Fenster,
-eigenes Taskleisten-Icon, kein Browser-Tab, kein Konsolenfenster. Ein ca. 6 MB
-kompiliertes Programm, das das Node-Backend im Hintergrund verwaltet und
-damit **echte Minecraft-Instanzen startet** (echte Mojang-Versions-Downloads,
-SHA-1-verifiziert, Fabric/Quilt, Microsoft-Login — alles davon, keine Demo).
+Horus kommt als **echte, sich selbst installierende native Windows-App** —
+`Horus.exe`: eigenes Fenster, eigenes Taskleisten-Icon, kein Browser-Tab,
+kein Konsolenfenster. Doppelklick genügt — die App **installiert sich
+selbst** wie jedes normale Windows-Programm (Eintrag im Startmenü,
+Desktop-Icon, ein echter Deinstallieren-Eintrag unter Einstellungen → Apps)
+und öffnet sich danach — kein separates Installationsprogramm, kein
+„Ordner zusammenhalten", denn die komplette App steckt in dieser einen
+Datei. Von da an verwaltet sie das abhängigkeitsfreie Node-Backend für dich
+und startet damit **echte Minecraft-Instanzen** (echte
+Mojang-Versions-Downloads, SHA-1-verifiziert, Fabric/Quilt,
+Microsoft-Login — alles davon, keine Demo).
 
 1. Node.js einmalig installieren: `winget install OpenJS.NodeJS.LTS` (und Java zum Spielen: `winget install EclipseAdoptium.Temurin.21.JRE`)
-2. [Repository herunterladen](https://github.com/Han4Star2/MinecraftClient/archive/refs/heads/main.zip) und entpacken
-3. Die native App bauen (braucht [Go](https://go.dev/dl/), dauert Sekunden, funktioniert auch von Linux/macOS aus):
+2. `Horus.exe` bauen (braucht [Go](https://go.dev/dl/), dauert Sekunden, funktioniert auch von Linux/macOS aus):
    ```bash
-   cd windows-app && ./build.sh
+   git clone https://github.com/Han4Star2/MinecraftClient
+   cd MinecraftClient/windows-app && ./build.sh
    ```
-   dann `windows-app/dist/Horus.exe` ins Repo-Hauptverzeichnis kopieren.
-4. **Doppelklick auf `Horus.exe`** — ein echtes Fenster öffnet sich, das Backend startet automatisch im Hintergrund.
+3. **Doppelklick auf `windows-app/dist/Horus.exe`** — sie installiert sich selbst, öffnet ein echtes Fenster, das Backend startet automatisch im Hintergrund.
 
-Noch kein `windows-app/dist/Horus.exe`? `Horus.bat` im Repo-Hauptverzeichnis
-ist ein Fallback, der Horus stattdessen in einem App-Modus-Edge-Fenster
-öffnet — gleiches Backend, gleiche Features, nur ein browserbasiertes statt
-ein natives Fenster. Siehe [windows-app/README.md](windows-app/README.md) für
-die Funktionsweise der nativen App und warum Go+WebView2 statt Electron.
+Diese `Horus.exe` ist danach eigenständig: irgendwohin kopieren, an jemand
+anderen weitergeben — sie braucht den Rest des Repositorys nicht daneben.
+`Horus.bat` im Repo-Hauptverzeichnis ist eine leichtere Alternative, falls du
+den Bau der nativen App überspringen willst (öffnet Horus in einem
+App-Modus-Edge-Fenster mit demselben Backend). Siehe
+[windows-app/README.md](windows-app/README.md) für die genaue
+Funktionsweise der Selbstinstallation und warum Go+WebView2 statt Electron
+oder einem klassischen Installer-Toolkit.
 
 Kein `npm install`, kein Build-Schritt für den Launcher selbst — Horus hat **null Abhängigkeiten**.
 

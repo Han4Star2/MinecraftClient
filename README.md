@@ -44,27 +44,31 @@ Horus draws a clear line, exactly like NoRisk:
 
 ## Quick start (Windows)
 
-Horus ships as a **real native Windows app** — `Horus.exe`: its own window,
-its own taskbar icon, no browser tab, no console window. It's a ~6 MB
-compiled program that manages the zero-dependency Node backend for you and
-lets you **launch real Minecraft instances** through it (genuine Mojang
-version downloads, SHA-1 verified, Fabric/Quilt, Microsoft login — all of it,
-not a demo).
+Horus ships as a **real, self-installing native Windows app** — `Horus.exe`:
+its own window, its own taskbar icon, no browser tab, no console window.
+Double-click it and it **installs itself** like any normal Windows program
+(Start Menu entry, Desktop icon, a proper Uninstall entry under
+Settings → Apps) and then opens — no separate installer, no "keep these
+folders together," because the whole app is embedded inside that one file.
+From there it manages the zero-dependency Node backend for you and lets you
+**launch real Minecraft instances** (genuine Mojang version downloads,
+SHA-1 verified, Fabric/Quilt, Microsoft login — all of it, not a demo).
 
 1. Install Node.js once: `winget install OpenJS.NodeJS.LTS` (and Java for playing: `winget install EclipseAdoptium.Temurin.21.JRE`)
-2. [Download this repository](https://github.com/Han4Star2/MinecraftClient/archive/refs/heads/main.zip) and unzip it
-3. Build the native app (needs [Go](https://go.dev/dl/), builds in seconds, cross-compiles fine even from Linux/macOS):
+2. Build `Horus.exe` (needs [Go](https://go.dev/dl/), builds in seconds, cross-compiles fine even from Linux/macOS):
    ```bash
-   cd windows-app && ./build.sh
+   git clone https://github.com/Han4Star2/MinecraftClient
+   cd MinecraftClient/windows-app && ./build.sh
    ```
-   then copy `windows-app/dist/Horus.exe` into the repo root.
-4. **Double-click `Horus.exe`** — a real window opens, the backend starts behind it automatically.
+3. **Double-click `windows-app/dist/Horus.exe`** — it installs itself, opens a real window, and the backend starts automatically behind it.
 
-No `windows-app/dist/Horus.exe` yet? `Horus.bat` at the repo root is a
-fallback that opens Horus in an app-mode Edge window instead — same backend,
-same features, just a browser-hosted window rather than a native one. See
-[windows-app/README.md](windows-app/README.md) for how the native app works
-and why it's Go+WebView2 rather than Electron.
+That `Horus.exe` is now standalone: copy it anywhere, send it to someone
+else, it doesn't need the rest of the repository next to it. `Horus.bat` at
+the repo root is a lighter fallback if you'd rather skip building the native
+app (opens Horus in an app-mode Edge window using the same backend). See
+[windows-app/README.md](windows-app/README.md) for exactly how the native
+app installs itself and why it's Go+WebView2 rather than Electron or a
+traditional installer toolkit.
 
 No `npm install`, no build step for the launcher itself — Horus has **zero dependencies**.
 

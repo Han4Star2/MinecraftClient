@@ -1,26 +1,35 @@
-# Horus.exe — the native Windows app
+# Horus.exe — the native, self-installing Windows app
 
-This is a **real Windows GUI application** — a compiled `.exe`, its own
-window, its own taskbar icon, no browser address bar, no console window
-flashing behind it. It is not Electron and it is not a `.bat` file opening a
-browser tab: it's `~6 MB`, starts instantly, and has exactly one job — host
-the Horus UI in a native [WebView2](https://developer.microsoft.com/microsoft-edge/webview2/)
-control (the Chromium engine already built into Windows 10/11) and manage the
-existing zero-dependency Node backend behind it.
+This is a **real Windows GUI application** — a single compiled `.exe`, its
+own window, its own taskbar icon, no browser address bar, no console window
+flashing behind it. It's `~7 MB`, fully standalone (the whole app is
+embedded inside it, see below), and it **installs itself**: double-click it
+and it behaves exactly like installing any normal Windows program —
+
+- copies itself into `%LOCALAPPDATA%\Programs\HorusClient`
+- adds a **Start Menu** entry and a **Desktop** icon
+- registers a proper **Uninstall** entry under Settings → Apps
+  (`Windows key → Apps → Horus Client → Uninstall` — no leftover files, no
+  hunting for a folder to delete by hand)
+- then opens
+
+Run it again from anywhere (Start Menu, Desktop, or the original downloaded
+copy) and it just launches — the install step is idempotent and effectively
+instant once installed.
 
 Everything Horus can do — resolving real Minecraft versions from Mojang,
 SHA-1-verified downloads, Fabric/Quilt, Microsoft login, mods, cosmetics —
-runs through that same backend exactly as it does in the browser build.
-**This wrapper doesn't reimplement or fake any of it; it just gives the
-existing, tested launcher a real window.**
+runs through the same Node backend exactly as the browser build. **This
+wrapper doesn't reimplement or fake any of it; it just gives the existing,
+tested launcher a real, installed window.**
 
 ## Get it running
 
-**Fastest path — use the prebuilt exe** if one was handed to you directly:
-drop `Horus.exe` into the repository root (next to `server/` and `app/`) and
-double-click it.
+**Fastest path** — if someone handed you a `Horus.exe` directly: double-click
+it. That's the whole install.
 
-**Build it yourself** (no Windows machine required — Go cross-compiles):
+**Build it yourself** (no Windows machine required — Go cross-compiles, and
+the app + server source it embeds are bundled in at build time):
 
 ```bash
 # needs Go >= 1.21: https://go.dev/dl/
@@ -28,9 +37,8 @@ cd windows-app
 ./build.sh
 ```
 
-This produces `windows-app/dist/Horus.exe`. Copy it to the repository root
-and double-click it. `Horus.bat` at the repo root will also find and prefer
-it automatically once it exists.
+This produces `windows-app/dist/Horus.exe` — a single standalone file. Copy
+it anywhere (a USB stick, a Downloads folder, wherever) and double-click it.
 
 ### What it needs on the machine that runs it
 
@@ -46,10 +54,16 @@ exactly what to install — not a silent hang.
 ## How it works
 
 ```
-Horus.exe (native window, WebView2)
+Horus.exe (downloaded copy, Start Menu entry, or Desktop icon — any of them)
    │
-   │  on launch: is 127.0.0.1:7411 already answering?
-   │    no  → spawn `node ..\server\index.js --port 7411 --no-open`
+   │  is %LOCALAPPDATA%\Programs\HorusClient\server\index.js already there?
+   │    no  → extract the embedded app/ + server/ payload there,
+   │          copy this exe in as the canonical Horus.exe,
+   │          add Start Menu + Desktop icons, register the Uninstall entry
+   │    yes → nothing to do, already installed
+   │
+   │  is 127.0.0.1:7411 already answering?
+   │    no  → spawn `node <install-dir>\server\index.js --port 7411 --no-open`
    │          (hidden console window, logs to horus-backend.log)
    │          wait up to 25s for it to come up
    │    yes → reuse it
@@ -59,15 +73,26 @@ Horus.exe (native window, WebView2)
 On window close: the backend child process is killed — but a Minecraft
 process it launched is a separate OS process and is untouched, exactly like
 the "keep launcher open" setting intends.
+
+Your game files, settings and Minecraft profiles live in ~/.horus (a normal
+per-user data directory, untouched by install/uninstall) — separate from
+the app install directory, exactly like any well-behaved Windows app.
 ```
 
-`main.go` is the entire app — no framework, no UI toolkit beyond WebView2's
-own Chromium view. The Node backend is unmodified; this is a shell around it.
+`main.go` is the entire app — no framework, no installer toolkit (no NSIS,
+no WiX, no Inno Setup), no UI beyond WebView2's own Chromium view and a
+couple of native message boxes. The Node backend is unmodified; this is a
+self-installing shell around it.
 
-## Why Go + WebView2 instead of Electron
+## Why Go + WebView2 instead of Electron or a "real" installer
 
-- **~6 MB**, one file, no bundled Chromium (~150+ MB with Electron) — the OS
+- **~7 MB**, one file, no bundled Chromium (~150+ MB with Electron) — the OS
   already has one.
+- No separate installer tool: `//go:embed` bundles `app/` and `server/`
+  straight into the binary, and the self-install logic is ~80 lines of plain
+  Go using only the standard library plus `golang.org/x/sys/windows/registry`
+  for the Uninstall entry — nothing to learn, nothing hidden in a `.nsi`
+  script.
 - Cross-compiles from Linux/macOS to a real `win-x64` PE without a Windows
   machine, mingw, or cgo (the WebView2 binding here,
   [jchv/go-webview2](https://github.com/jchv/go-webview2), is pure Go).
@@ -86,8 +111,8 @@ Explorer, Alt-Tab and the taskbar — not just in the window's title bar.
 
 | File | What |
 |---|---|
-| `main.go` | The native shell: backend process management + WebView2 window |
+| `main.go` | The native shell: self-install, shortcuts, uninstall, backend process management, WebView2 window |
 | `gen-icon/main.go` | Generates `icon.png` (no external asset pipeline) |
-| `build.sh` | One command: icon → Windows resource → cross-compiled `dist/Horus.exe` |
+| `build.sh` | Stages `app/`+`server/` for embedding → icon → Windows resource → cross-compiled `dist/Horus.exe` |
 | `go.mod` / `go.sum` | Two dependencies: `jchv/go-webview2`, `golang.org/x/sys` |
-| `dist/`, `icon.png`, `*.syso` | Build output — gitignored, regenerate with `build.sh` |
+| `dist/`, `payload/`, `icon.png`, `*.syso` | Build output — gitignored, regenerate with `build.sh` |

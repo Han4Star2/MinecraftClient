@@ -1,4 +1,5 @@
 dist/
+payload/
 icon.png
 *.syso
 horus-backend.log

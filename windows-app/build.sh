@@ -8,6 +8,12 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
+echo "==> Staging app/ and server/ for embedding (go:embed can't reach outside the module)"
+rm -rf payload
+mkdir -p payload
+cp -R ../app payload/app
+cp -R ../server payload/server
+
 echo "==> Fetching go-winres (embeds the icon + manifest into the exe)"
 GOBIN="$(mktemp -d)"
 trap 'rm -rf "$GOBIN"' EXIT
@@ -31,4 +37,6 @@ GOOS=windows GOARCH=amd64 CGO_ENABLED=0 \
   go build -ldflags "-H=windowsgui -s -w" -o dist/Horus.exe .
 
 echo "==> Done: windows-app/dist/Horus.exe ($(du -h dist/Horus.exe | cut -f1))"
-echo "    Copy it into the repository root (next to server/ and app/) and double-click it."
+echo "    It's fully standalone (app/ and server/ are embedded) - hand it to anyone."
+echo "    Double-click it: it installs itself to %LOCALAPPDATA%\\Programs\\HorusClient,"
+echo "    adds Start Menu + Desktop icons and an Uninstall entry, then opens."

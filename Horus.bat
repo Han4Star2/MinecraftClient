@@ -3,10 +3,13 @@
 ::  Horus Client - Windows launcher
 ::
 ::  Prefer windows-app\dist\Horus.exe if it's been built (see
-::  windows-app\build.sh) - that's a real native GUI app: its own
-::  window, its own taskbar icon, no browser chrome, no console
-::  flash. This .bat is the fallback for when you haven't built
-::  it yet: it opens Horus in an app-mode Edge window instead.
+::  windows-app\build.sh) - that's a real, self-installing native
+::  GUI app: its own window, its own taskbar icon, Start Menu +
+::  Desktop icons, a real Uninstall entry, no browser chrome, no
+::  console flash. It's fully standalone once built (nothing else
+::  needs to sit next to it). This .bat is the fallback for when
+::  you haven't built it yet: it opens Horus in an app-mode Edge
+::  window instead, running straight from this repo checkout.
 ::
 ::  Requirements: Node.js >= 18   (winget install OpenJS.NodeJS.LTS)
 ::                Java for playing (winget install EclipseAdoptium.Temurin.21.JRE)
