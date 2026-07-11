@@ -1,14 +1,23 @@
 @echo off
 :: ============================================================
 ::  Horus Client - Windows launcher
-::  Starts the zero-dependency backend and opens Horus as its
-::  own app window (Edge --app mode, no browser chrome).
+::
+::  Prefer windows-app\dist\Horus.exe if it's been built (see
+::  windows-app\build.sh) - that's a real native GUI app: its own
+::  window, its own taskbar icon, no browser chrome, no console
+::  flash. This .bat is the fallback for when you haven't built
+::  it yet: it opens Horus in an app-mode Edge window instead.
 ::
 ::  Requirements: Node.js >= 18   (winget install OpenJS.NodeJS.LTS)
 ::                Java for playing (winget install EclipseAdoptium.Temurin.21.JRE)
 :: ============================================================
 setlocal
 cd /d "%~dp0"
+
+if exist "windows-app\dist\Horus.exe" (
+  start "" "windows-app\dist\Horus.exe"
+  exit /b 0
+)
 
 where node >nul 2>nul
 if errorlevel 1 (
@@ -30,4 +39,7 @@ start "" msedge --app=http://127.0.0.1:%PORT%/ 2>nul || start "" http://127.0.0.
 
 echo [Horus] Running. Close this window anytime - the backend keeps running
 echo         until you hit "Quit Launcher" inside Horus.
+echo.
+echo [Horus] Tip: build windows-app\dist\Horus.exe for a real native app
+echo         window instead of this Edge fallback - see windows-app\README.md
 endlocal

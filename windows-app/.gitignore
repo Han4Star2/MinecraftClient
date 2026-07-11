@@ -1,0 +1,4 @@
+dist/
+icon.png
+*.syso
+horus-backend.log

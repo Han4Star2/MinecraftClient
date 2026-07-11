@@ -44,11 +44,29 @@ Horus draws a clear line, exactly like NoRisk:
 
 ## Quick start (Windows)
 
+Horus ships as a **real native Windows app** — `Horus.exe`: its own window,
+its own taskbar icon, no browser tab, no console window. It's a ~6 MB
+compiled program that manages the zero-dependency Node backend for you and
+lets you **launch real Minecraft instances** through it (genuine Mojang
+version downloads, SHA-1 verified, Fabric/Quilt, Microsoft login — all of it,
+not a demo).
+
 1. Install Node.js once: `winget install OpenJS.NodeJS.LTS` (and Java for playing: `winget install EclipseAdoptium.Temurin.21.JRE`)
 2. [Download this repository](https://github.com/Han4Star2/MinecraftClient/archive/refs/heads/main.zip) and unzip it
-3. **Double-click `Horus.bat`** — the backend starts and Horus opens as its own app window (Edge `--app` mode, no browser chrome)
+3. Build the native app (needs [Go](https://go.dev/dl/), builds in seconds, cross-compiles fine even from Linux/macOS):
+   ```bash
+   cd windows-app && ./build.sh
+   ```
+   then copy `windows-app/dist/Horus.exe` into the repo root.
+4. **Double-click `Horus.exe`** — a real window opens, the backend starts behind it automatically.
 
-No `npm install`, no build step — Horus has **zero dependencies**.
+No `windows-app/dist/Horus.exe` yet? `Horus.bat` at the repo root is a
+fallback that opens Horus in an app-mode Edge window instead — same backend,
+same features, just a browser-hosted window rather than a native one. See
+[windows-app/README.md](windows-app/README.md) for how the native app works
+and why it's Go+WebView2 rather than Electron.
+
+No `npm install`, no build step for the launcher itself — Horus has **zero dependencies**.
 
 <details>
 <summary>Linux / macOS / manual start</summary>
