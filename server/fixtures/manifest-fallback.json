@@ -1,0 +1,22 @@
+{
+  "note": "Bundled offline fallback so the version picker is never empty. Entries carry no download URLs on purpose — Quill fetches the real, signed metadata (with SHA-1 hashes) from Mojang or your configured mirror on first online use and caches it locally.",
+  "versions": [
+    { "id": "1.21.5", "type": "release", "url": null },
+    { "id": "1.21.4", "type": "release", "url": null },
+    { "id": "1.21.3", "type": "release", "url": null },
+    { "id": "1.21.1", "type": "release", "url": null },
+    { "id": "1.21", "type": "release", "url": null },
+    { "id": "1.20.6", "type": "release", "url": null },
+    { "id": "1.20.4", "type": "release", "url": null },
+    { "id": "1.20.2", "type": "release", "url": null },
+    { "id": "1.20.1", "type": "release", "url": null },
+    { "id": "1.19.4", "type": "release", "url": null },
+    { "id": "1.19.2", "type": "release", "url": null },
+    { "id": "1.18.2", "type": "release", "url": null },
+    { "id": "1.17.1", "type": "release", "url": null },
+    { "id": "1.16.5", "type": "release", "url": null },
+    { "id": "1.12.2", "type": "release", "url": null },
+    { "id": "1.8.9", "type": "release", "url": null },
+    { "id": "1.7.10", "type": "release", "url": null }
+  ]
+}
