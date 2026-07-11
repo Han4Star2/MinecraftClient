@@ -77,6 +77,15 @@ export const icons = {
   flame: S('<path d="M12 22c4 0 7-2.9 7-7 0-3-2-5.5-3.5-7C15 10 14 11 13 11c0-3-1-6.5-4-9 .5 3-.5 4.5-2 6.5S4.9 12 5 15c.1 4.1 3 7 7 7z"/>'),
   save: S('<path d="M5 3.5h11L20.5 8v11A1.5 1.5 0 0 1 19 20.5H5A1.5 1.5 0 0 1 3.5 19V5A1.5 1.5 0 0 1 5 3.5z"/><path d="M8 3.5V9h7V3.5M8 20.5V14h8v6.5"/>'),
   rotate: S('<path d="M4 10a8 8 0 0 1 14.9-2M20 14a8 8 0 0 1-14.9 2"/><path d="M18 3.5V8h-4.5M6 20.5V16h4.5"/>'),
+  bell: S('<path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 20a2 2 0 0 0 4 0"/>'),
+  winMin: S('<path d="M5 12h14"/>'),
+  winMax: S('<rect x="5" y="5" width="14" height="14" rx="1.5"/>'),
+  arrowL: S('<path d="M15 5l-7 7 7 7"/>'),
+  arrowR: S('<path d="M9 5l7 7-7 7"/>'),
+  idcard: S('<rect x="2.5" y="5" width="19" height="14" rx="2"/><circle cx="8" cy="11" r="2.2"/><path d="M4.8 16c.5-1.7 1.7-2.6 3.2-2.6s2.7.9 3.2 2.6"/><path d="M14.5 10h4M14.5 13h4"/>'),
+  face: S('<circle cx="12" cy="12" r="9"/><circle cx="8.5" cy="10.5" r="0.6" fill="currentColor"/><circle cx="15.5" cy="10.5" r="0.6" fill="currentColor"/><path d="M8.5 14.5c1 1.2 2.2 1.8 3.5 1.8s2.5-.6 3.5-1.8"/>'),
+  running: S('<circle cx="14" cy="5.5" r="1.8"/><path d="M13 9l-3 2 1 4-2 4M13 9l3 1 3-1M10 11l-3 1M13 13l3 3"/>'),
+  headset: S('<path d="M5 13v-1a7 7 0 0 1 14 0v1"/><rect x="3.5" y="13" width="3.5" height="6" rx="1.5"/><rect x="17" y="13" width="3.5" height="6" rx="1.5"/><path d="M19 19a4 4 0 0 1-4 3.5h-2"/>'),
 };
 
 /** Return the SVG markup for an icon name (empty string if unknown). */

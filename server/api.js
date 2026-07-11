@@ -16,6 +16,8 @@ import { searchMods, installMod } from './modrinth.js';
 import { startMsa, msaStatus, signOut } from './msa.js';
 import { pingServer } from './ping.js';
 import { cfSearch, cfInstall } from './curseforge.js';
+import * as content from './content.js';
+import { readBody } from './util.js';
 
 const VERSION = '2.0.0';
 
@@ -174,6 +176,65 @@ export async function handleApi(req, res, url) {
       return true;
     }
 
+    /* ------------------------------------------------- content platform */
+    if (method === 'GET' && pathname === '/api/content') {
+      const p = url.searchParams;
+      sendJson(res, 200, {
+        content: await content.listContent({
+          type: p.get('type') || '', status: p.get('status') || '', category: p.get('category') || '',
+          version: p.get('version') || '', loader: p.get('loader') || '',
+          verified: p.get('verified') === '1', query: p.get('q') || '', sort: p.get('sort') || 'popular',
+        }),
+        categories: await content.categories(),
+        pending: await content.pendingCount(),
+      });
+      return true;
+    }
+    if (method === 'POST' && pathname === '/api/content/upload') {
+      let meta;
+      try { meta = JSON.parse(Buffer.from(req.headers['x-horus-meta'] || '', 'base64').toString('utf8')); }
+      catch { sendJson(res, 400, { error: 'missing or invalid x-horus-meta header' }); return true; }
+      const buf = await readBody(req, 180 * 1024 * 1024);
+      sendJson(res, 200, await content.uploadContent(meta, buf));
+      return true;
+    }
+    m = pathname.match(/^\/api\/content\/([^/]+)\/(review|rate|install)$/);
+    if (m && method === 'POST') {
+      const id = decodeURIComponent(m[1]);
+      const body = await readJsonBody(req);
+      if (m[2] === 'review') sendJson(res, 200, await content.reviewContent(id, body.action));
+      else if (m[2] === 'rate') sendJson(res, 200, await content.rateContent(id, body.stars));
+      else sendJson(res, 200, await content.installContent(id, body.profileId));
+      return true;
+    }
+    m = pathname.match(/^\/api\/content\/([^/]+)\/download$/);
+    if (m && method === 'GET') {
+      const file = await content.contentFile(decodeURIComponent(m[1]));
+      if (!file) { sendJson(res, 404, { error: 'not found' }); return true; }
+      res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Length': file.buf.length });
+      res.end(file.buf);
+      return true;
+    }
+    if (method === 'GET' && pathname === '/api/content/updates') {
+      sendJson(res, 200, { updates: await content.checkUpdates(url.searchParams.get('profileId')) });
+      return true;
+    }
+    if (method === 'POST' && pathname === '/api/content/update-all') {
+      const { profileId } = await readJsonBody(req);
+      sendJson(res, 200, { updated: await content.updateAll(profileId) });
+      return true;
+    }
+    if (method === 'GET' && pathname === '/api/serverpacks') {
+      sendJson(res, 200, { serverpacks: await content.listServerPacks() });
+      return true;
+    }
+    m = pathname.match(/^\/api\/serverpacks\/([^/]+)\/(join|recommended)$/);
+    if (m) {
+      const id = decodeURIComponent(m[1]);
+      if (m[2] === 'join' && method === 'POST') { sendJson(res, 200, await content.joinServerPack(id)); return true; }
+      if (m[2] === 'recommended' && method === 'GET') { sendJson(res, 200, { content: await content.recommendedFor(id) }); return true; }
+    }
+
     /* ------------------------------------------------------------- launch */
     if (method === 'POST' && pathname === '/api/launch') {
       const { profileId, server, dryRun } = await readJsonBody(req);
@@ -307,7 +368,7 @@ export async function handleApi(req, res, url) {
     sendJson(res, 404, { error: `no such endpoint: ${method} ${pathname}` });
     return true;
   } catch (e) {
-    sendJson(res, 500, { error: e.message || String(e) });
+    sendJson(res, e.code === 403 || e.code === 404 ? e.code : 500, { error: e.message || String(e) });
     return true;
   }
 }

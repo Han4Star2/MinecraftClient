@@ -3,43 +3,44 @@
 # 𓂀 Horus Client
 
 **Der offene Minecraft-Client-Launcher.**
-Feathers Politur + NoRisks Features — neu gebaut als freie Software, mit wegdesignten Paywalls.
+Ein Client im NoRisk-/Feather-Stil, neu gebaut als freie Software — mit wegdesignten Paywalls.
 
 MIT-Lizenz · null Abhängigkeiten · keine Telemetrie · kein Echtgeld-Store · kein Account-Zwang
 
-[English 🇬🇧](README.md) · [Schnellstart](#schnellstart-windows) · [Features](#alles-drin) · [Economy](#die-coin-economy-nirgendwo-eine-kreditkarte) · [Architektur](#architektur)
+[English 🇬🇧](README.md) · [Schnellstart](#schnellstart-windows) · [Features](#alles-drin) · [Architektur](#architektur)
 
-<img src="docs/screenshots/home.png" alt="Horus Startbildschirm" width="820">
+<img src="docs/screenshots/home.png" alt="Horus Startbildschirm" width="860">
 
 </div>
 
 ---
 
+## Der Launcher startet das Spiel — der Rest ist im Spiel
+
+Horus zieht eine klare Grenze, genau wie NoRisk:
+
+- **Der Launcher** ist eine schmale Icon-Leiste + ein Startbildschirm mit deinem 3D-Skin und einem großen **LAUNCH**-Button. Seine Aufgaben: **Instanz** wählen, **Cosmetics** verwalten, **Inhalte pro Instanz** hinzufügen (Mods/Packs/Shader von Modrinth & CurseForge) und **Social**.
+- **In Minecraft** öffnet **Rechte Umschalttaste** das In-Game-Overlay: das **MOD MENU** (alle eingebauten Client-Mods — hier eingestellt, nie im Launcher), **Minispiele**, Cosmetics-Schnellwechsel, HUD-Editor, Social und Screenshots.
+
+<div align="center">
+<img src="docs/screenshots/cosmetics.png" alt="Cape-Browser mit allen Vanilla-Capes" width="425"> <img src="docs/screenshots/ingame.png" alt="In-Game Right-Shift-Overlay" width="425">
+<img src="docs/screenshots/discover.png" alt="Inhalte pro Instanz von Modrinth und CurseForge" width="425"> <img src="docs/screenshots/ingame-menu.png" alt="In-Game-Mod-Menü" width="425">
+</div>
+
 ## Alles drin
 
 | | |
 |---|---|
-| 🛒 **Cosmetic-Shop** | **200+ Artikel**: Capes, Hüte, Wings, **Pets**, Emotes und **Nametag-Effekte**. Saisonale Rotation, **Collections** (passende Sets mit Bundle-Rabatt), 3D-**Anprobe vor dem Kauf** — und alles wird mit **in der App verdienten Coins** gekauft, niemals mit Geld. |
-| 🪙 **Coins & Quests** | Täglicher Check-in mit Streak-Bonus, tägliche/wöchentliche/einmalige Quests, Minigame-Auszahlungen (pro Tag gedeckelt, damit es ein Spiel bleibt). |
-| ✦ **Horus+** | Das Premiumsystem im NRC+-Stil — bezahlt **mit Coins**: monatlicher Cosmetic-Drop, 20 % Shop-Rabatt, 50 Freundes-Slots, 5 Hosted Worlds, animierte Nametags, Exclusives. Ein Ziel, keine Paywall. |
-| 🎨 **Cape-Studio** | Eigene Capes **gratis** gestalten: 10×16-Pixel-Editor mit Füll-/Spiegel-Werkzeugen, PNG-Import/-Export, sofort anlegbar. |
-| 🕹️ **Minispiele** | Tetris, Pong (gegen KI), Tic-Tac-Toe, Snake — direkt im Client; Highscores füttern Quests und Coins. |
-| 💬 **Social** | **Freundesanfragen**, Online-Status, Einzel-**Chats**, ein **Social Feed** mit Posts & Likes, Benachrichtigungen — optional, selbst hostbar, zum Spielen nie nötig. |
-| 🌍 **Hosted Worlds** | Deine echten Spielstände aus allen Profilen, Host-/Einladungs-Flow im Social-System, höhere Limits mit Horus+. |
-| 📰 **News** | Updates, Events, Changelog, neue Cosmetics — plus **Live-Serverstatus** über eine echte Server-List-Ping-Implementierung. |
-| 🎛️ **Mod-Menü & HUD-Editor** | 40+ eingebaute Module (Keystrokes, CPS, Zoom, Scoreboard, …) im Feather-Raster, dazu frei verschiebbare HUD-Overlays. |
-| ⬇️ **Echter Launcher-Kern** | Alle Minecraft-Versionen aus Mojangs offiziellen Metadaten, SHA-1-verifizierte Parallel-Downloads, **Fabric/Quilt**-Auto-Profile, Profil-Isolation. |
-| 🧩 **CurseForge + Modrinth** | Beide Mod-Quellen eingebaut. Modrinth ohne Key; CurseForge mit deinem kostenlosen API-Key. Normale Jars im Standard-`mods/`-Ordner. |
-| 🔑 **Microsoft-Login** | Komplette Device-Code-Kette (MSA → Xbox Live → XSTS → Minecraft Services) mit eigener Azure-Client-ID — plus vollwertiger Offline-Modus. |
-| 🟫 **Bedrock Edition** | Ein Bedrock-Profiltyp startet die Store-Version über `minecraft://` (Windows). |
-| 🎨 **Themes** | Dark, Midnight, Sandstone, Light + freie Akzentfarbe. |
-| 🔌 **Server-API** | Offene Overlay-/Payload-API für Server ([docs/server-api.md](docs/server-api.md)) — jedes Byte einsehbar. |
-
-<div align="center">
-<img src="docs/screenshots/shop.png" alt="Shop" width="410"> <img src="docs/screenshots/cosmetics.png" alt="Garderobe mit Cape-Studio" width="410">
-<img src="docs/screenshots/minigames.png" alt="Minispiele" width="410"> <img src="docs/screenshots/social.png" alt="Social" width="410">
-<img src="docs/screenshots/news.png" alt="News mit Live-Serverstatus" width="410"> <img src="docs/screenshots/mods.png" alt="Mod-Menü" width="410">
-</div>
+| 🎬 **NoRisk-Style-Launcher** | Schmale Icon-Leiste, Topbar mit Instanz + Account + Freunden, zentraler 3D-Skin, großer LAUNCH-Button mit Versionsauswahl, Live-NEWS-Panel. |
+| 🧥 **Alle Vanilla-Capes 1:1** | **Alle** offiziellen Minecraft-Capes — Migrator, Cherry Blossom, 15th Anniversary, jedes MineCon, Vanilla, Mojang (Studios + Classic), Realms, Translator, Cobalt, Scrolls, Prismarine, Turtle, Founder's, Purple Heart, Common/Home/Menace, Snowman, Spade, Birthday u. v. m. — als scharfe Pixel-Art, plus Community-Capes. Browser mit **All / My Capes / Favorites / Vanilla**, Suche, Favoriten und Live-3D-Vorschau. |
+| 🎨 **Cape-Studio** | Eigene Capes **gratis** gestalten: 10×16-Pixel-Editor mit Füllen/Spiegeln, PNG-Import/-Export, Start von jedem Vanilla-Cape als Vorlage. |
+| 📦 **Inhalte pro Instanz** | Mods, Resource Packs und Shader **pro Instanz** aus **Modrinth** und **CurseForge** hinzufügen, Ein-Klick-Installation, Verifiziert-Badges, Bewertungen, Auto-Updates. |
+| 🏪 **Integrierte Content-Plattform** | Eigene Mods/Packs direkt im Launcher **hochladen** → **Admin-Review** → Verifiziert-Badge → Ein-Klick-Install für alle. **Server-Pakete** bündeln Mods + Einstellungen eines Servers hinter einem **Beitreten**-Button. |
+| 🎮 **In-Game-Overlay** | Rechte Umschalttaste in der Welt → MOD MENU (40+ eingebaute Module), Minispiele (Tetris/Pong/Tic-Tac-Toe/Snake), HUD-Editor, Cosmetics, Social, Screenshot. |
+| 💬 **Social überall** | Freundesanfragen, Status, Chats, Feed, Benachrichtigungen — im Launcher **und** im In-Game-Overlay. Optional & selbst hostbar. |
+| 🪙 **Coins, Quests, Horus+** | Coins in der App verdienen (nie mit Geld) für Shop-Cosmetics; das NRC+-Tier wird **mit Coins** bezahlt. |
+| ⬇️ **Echter Launcher-Kern** | Jede Minecraft-Version aus Mojangs offiziellen Metadaten, SHA-1-verifizierte Parallel-Downloads, **Fabric/Quilt**-Auto-Profile, Offline- + Microsoft-Device-Code-Login, **Bedrock**-Start unter Windows. |
+| 🎨 **Themes & API** | Dark/Midnight/Sandstone/Light + Akzentfarbe; offene Server-Overlay-API ([docs/server-api.md](docs/server-api.md)). |
 
 ## Schnellstart (Windows)
 

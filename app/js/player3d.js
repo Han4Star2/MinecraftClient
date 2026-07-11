@@ -7,6 +7,7 @@ import { el, esc } from './components.js';
 import { playerTextures, capeTexture, capeTextureFromPixels } from './skin.js';
 import { shopItem } from './shopCatalog.js';
 import { customCape } from './economy.js';
+import { capeCanvas, capeById } from './vanillaCapes.js';
 
 const S = 9; // px per skin-pixel
 const px = (n) => n * S;
@@ -157,6 +158,8 @@ function shade(hex, f) {
 
 export function resolveCapeCanvas(capeId, scale = 10) {
   if (!capeId) return null;
+  const vanilla = capeById(capeId);
+  if (vanilla) return capeCanvas(vanilla, scale);
   const custom = customCape(capeId);
   if (custom) return capeTextureFromPixels(custom.pixels, scale);
   const item = shopItem(capeId);

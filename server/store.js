@@ -30,6 +30,9 @@ export const DEFAULT_SETTINGS = {
   downloadConcurrency: 4,
   metaMirror: '',
   curseforgeKey: '',
+  contentRegistry: '',
+  contentAdmin: true,
+  autoUpdateContent: true,
   theme: 'dark',
   accountName: 'Player',
   accountType: 'offline',
@@ -73,6 +76,7 @@ export function dirs() {
     natives: path.join(dataDir, 'natives'),
     profiles: path.join(dataDir, 'profiles'),
     screenshots: path.join(dataDir, 'screenshots'),
+    content: path.join(dataDir, 'content'),
   };
 }
 

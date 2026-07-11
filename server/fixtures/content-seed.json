@@ -1,0 +1,38 @@
+{
+  "note": "Seed catalog for the content library. These describe example community content; Horus generates a small valid placeholder archive for each on first run (it never redistributes third-party bytes), so the full upload → review → install → update flow works offline. Replace or moderate freely — it is just your local registry.",
+  "content": [
+    { "id": "seed-sodium", "type": "mod", "name": "Rapid Render", "author": "horus-team", "category": "performance", "summary": "Sodium-class rendering optimizations for buttery FPS.", "versions": ["1.21.5", "1.21.1", "1.20.6", "1.20.1"], "loaders": ["fabric", "quilt"], "verified": true, "downloads": 184213, "rating": [4.9, 210] },
+    { "id": "seed-lithium", "type": "mod", "name": "Tick Boost", "author": "horus-team", "category": "performance", "summary": "Server-side game-logic optimizations, no behavior changes.", "versions": ["1.21.5", "1.21.1", "1.20.1"], "loaders": ["fabric"], "verified": true, "downloads": 142980, "rating": [4.8, 150] },
+    { "id": "seed-iris", "type": "mod", "name": "Prism Shaders Loader", "author": "horus-team", "category": "graphics", "summary": "Load and manage shader packs on Fabric.", "versions": ["1.21.5", "1.21.1", "1.20.1"], "loaders": ["fabric"], "verified": true, "downloads": 98771, "rating": [4.7, 132] },
+    { "id": "seed-jei", "type": "mod", "name": "Recipe Compass", "author": "community", "category": "utility", "summary": "Item and recipe lookup index for modded play.", "versions": ["1.21.1", "1.20.1"], "loaders": ["forge", "neoforge"], "verified": false, "downloads": 76540, "rating": [4.6, 88] },
+    { "id": "seed-map", "type": "mod", "name": "Atlas Minimap", "author": "cartoq", "category": "utility", "summary": "Minimap with waypoints, cave mode and a fullscreen atlas.", "versions": ["1.21.5", "1.21.1"], "loaders": ["fabric", "forge"], "verified": true, "downloads": 51230, "rating": [4.5, 64] },
+    { "id": "seed-carry", "type": "mod", "name": "Backpacks+", "author": "loothoarder", "category": "gameplay", "summary": "Tiered backpacks with upgrades and auto-pickup.", "versions": ["1.21.1", "1.20.1"], "loaders": ["fabric"], "verified": false, "downloads": 21044, "rating": [4.3, 41] },
+    { "id": "seed-faithful", "type": "resourcepack", "name": "Crisp 32x", "author": "pixelforge", "category": "realistic", "summary": "Clean 32× textures faithful to the vanilla look.", "versions": ["1.21.5", "1.21.1", "1.20.1"], "verified": true, "downloads": 88110, "rating": [4.8, 176] },
+    { "id": "seed-pvp", "type": "resourcepack", "name": "Edge PvP 16x", "author": "clutch", "category": "pvp", "summary": "Short-sword low-fire PvP pack with clean UI.", "versions": ["1.8.9", "1.21.5"], "verified": true, "downloads": 64980, "rating": [4.7, 120] },
+    { "id": "seed-cozy", "type": "resourcepack", "name": "Cozy Cottage", "author": "meadowmaker", "category": "cartoon", "summary": "Warm, hand-painted cartoon textures.", "versions": ["1.21.5", "1.21.1"], "verified": false, "downloads": 30221, "rating": [4.6, 58] },
+    { "id": "seed-ui", "type": "resourcepack", "name": "Modern UI", "author": "flatlab", "category": "gui", "summary": "Flat, high-contrast interface and HUD overhaul.", "versions": ["1.21.5"], "verified": false, "downloads": 18740, "rating": [4.4, 33] },
+    { "id": "seed-bsl", "type": "shader", "name": "Aurora Shaders", "author": "lightbend", "category": "realistic", "summary": "Balanced realistic lighting with volumetric clouds.", "versions": ["1.21.5", "1.21.1", "1.20.1"], "verified": true, "downloads": 71203, "rating": [4.9, 190] },
+    { "id": "seed-complementary", "type": "shader", "name": "Harmony Shaders", "author": "shaderworks", "category": "balanced", "summary": "Great looks at high FPS — a safe default.", "versions": ["1.21.5", "1.21.1"], "verified": true, "downloads": 66042, "rating": [4.8, 165] },
+    { "id": "seed-lofi", "type": "shader", "name": "Soft Toon", "author": "inkwell", "category": "stylized", "summary": "Soft cel-shaded stylized lighting.", "versions": ["1.21.5"], "verified": false, "downloads": 24110, "rating": [4.5, 47] }
+  ],
+  "serverpacks": [
+    {
+      "id": "skyblock", "name": "Horus Skyblock", "address": "play.horus-demo.net", "version": "1.21.1", "loader": "fabric",
+      "ramMb": 4096, "content": ["seed-sodium", "seed-map", "seed-faithful"], "recommended": ["seed-bsl"],
+      "settings": { "renderDistance": 12, "fov": 80 },
+      "desc": "Everything you need for our Skyblock realm — performance, minimap and our official texture pack, auto-installed."
+    },
+    {
+      "id": "pvparena", "name": "Edge PvP Network", "address": "pvp.horus-demo.net", "version": "1.8.9", "loader": "vanilla",
+      "ramMb": 2048, "content": ["seed-pvp"], "recommended": [],
+      "settings": { "fov": 90 },
+      "desc": "Our 1.8.9 PvP pack and tuned settings — join and you're ready to duel."
+    },
+    {
+      "id": "createpack", "name": "Cogworks (Create)", "address": "create.horus-demo.net", "version": "1.20.1", "loader": "forge",
+      "ramMb": 6144, "content": ["seed-jei", "seed-lithium", "seed-cozy"], "recommended": ["seed-carry"],
+      "settings": { "renderDistance": 10 },
+      "desc": "A curated Create-style modpack profile with the recipe index and optimizations preloaded."
+    }
+  ]
+}

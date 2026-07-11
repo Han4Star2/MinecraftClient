@@ -138,8 +138,16 @@ export function render(root) {
       control({ t: 'slider', min: 1, max: 16, def: 4 }, s.downloadConcurrency, (v) => { s.downloadConcurrency = v; save('settings'); })));
     g.appendChild(settingRow('Version meta mirror', 'Alternative to piston-meta.mojang.com — no vendor lock-in, point Horus anywhere',
       control({ t: 'text' }, s.metaMirror, (v) => { s.metaMirror = v; save('settings'); })));
-    g.appendChild(settingRow('CurseForge API key', 'Free at console.curseforge.com — enables the CurseForge tab on the Mods page (Modrinth needs no key)',
+    g.appendChild(settingRow('CurseForge API key', 'Free at console.curseforge.com — enables the CurseForge tab in Content (Modrinth needs no key)',
       control({ t: 'text' }, s.curseforgeKey, (v) => { s.curseforgeKey = v.trim(); save('settings'); })));
+
+    const gc = group('Content platform');
+    gc.appendChild(settingRow('Content registry', 'Empty = your own local registry. Point at a shared, self-hostable registry that speaks the same open API.',
+      control({ t: 'text' }, s.contentRegistry, (v) => { s.contentRegistry = v.trim(); save('settings'); })));
+    gc.appendChild(settingRow('I moderate this registry', 'Enables the review queue (approve / reject / verify uploads). Turn off on a public registry served to others.',
+      makeSwitch(s.contentAdmin !== false, (v) => { s.contentAdmin = v; save('settings'); })));
+    gc.appendChild(settingRow('Auto-update installed content', 'Keep installed mods, packs & shaders on their latest reviewed version',
+      makeSwitch(s.autoUpdateContent !== false, (v) => { s.autoUpdateContent = v; save('settings'); })));
 
     const g2 = group('Cache');
     const row = el(`<div class="setting-row"><div class="s-label"><div class="name">Download cache</div><div class="desc">Verified files are reused across profiles</div></div><div class="s-ctrl"></div></div>`);

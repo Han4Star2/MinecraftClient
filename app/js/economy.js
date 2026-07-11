@@ -20,6 +20,7 @@ export function economy() {
       quests: {},            // id → { done: bool|count, claimed: 'YYYY-MM-DD' | true }
       minigame: { date: '', earned: 0, best: {} },
       customCapes: [],       // { id, name, pixels: [[hex|null]*10]*16 }
+      capeFavorites: [],     // favorited cape ids (any source)
     };
   }
   return state.economy;
@@ -200,4 +201,18 @@ export function deleteCustomCape(id) {
 
 export function customCape(id) {
   return economy().customCapes.find((c) => c.id === id) || null;
+}
+
+export function toggleCapeFavorite(id) {
+  const e = economy();
+  if (!e.capeFavorites) e.capeFavorites = [];
+  const i = e.capeFavorites.indexOf(id);
+  if (i >= 0) e.capeFavorites.splice(i, 1);
+  else e.capeFavorites.push(id);
+  save('cosmetics');
+  return i < 0;
+}
+
+export function isCapeFavorite(id) {
+  return (economy().capeFavorites || []).includes(id);
 }

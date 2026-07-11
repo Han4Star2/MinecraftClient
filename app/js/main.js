@@ -12,6 +12,7 @@ import * as home from './pages/home.js';
 import * as news from './pages/news.js';
 import * as library from './pages/library.js';
 import * as mods from './pages/mods.js';
+import * as discover from './pages/discover.js';
 import * as hud from './pages/hud.js';
 import * as shop from './pages/shop.js';
 import * as cosmetics from './pages/cosmetics.js';
@@ -20,24 +21,31 @@ import * as social from './pages/social.js';
 import * as worlds from './pages/worlds.js';
 import * as screenshots from './pages/screenshots.js';
 import * as settings from './pages/settings.js';
+import * as ingame from './pages/ingame.js';
 
 export { APP_VERSION, BUILD } from './version.js';
 import { APP_VERSION } from './version.js';
 
 const routes = {
-  home: { mod: home, icon: 'home', label: 'nav.home' },
-  news: { mod: news, icon: 'list', label: 'nav.news' },
-  library: { mod: library, icon: 'library', label: 'nav.library' },
-  mods: { mod: mods, icon: 'mods', label: 'nav.mods' },
-  hud: { mod: hud, icon: 'hud', label: 'nav.hud' },
-  shop: { mod: shop, icon: 'gift', label: 'nav.shop' },
-  cosmetics: { mod: cosmetics, icon: 'shirt', label: 'nav.cosmetics' },
-  minigames: { mod: minigames, icon: 'gamepad', label: 'nav.minigames' },
-  social: { mod: social, icon: 'users', label: 'nav.social' },
-  worlds: { mod: worlds, icon: 'globe', label: 'nav.worlds' },
-  screenshots: { mod: screenshots, icon: 'camera', label: 'nav.screenshots' },
+  home: { mod: home, icon: 'play', label: 'nav.home' },
+  library: { mod: library, icon: 'idcard', label: 'nav.library' },
+  discover: { mod: discover, icon: 'grid', label: 'nav.content' },
+  cosmetics: { mod: cosmetics, icon: 'face', label: 'nav.cosmetics' },
+  social: { mod: social, icon: 'headset', label: 'nav.social' },
   settings: { mod: settings, icon: 'settings', label: 'nav.settings' },
+  ingame: { mod: ingame, icon: 'gamepad', label: 'nav.ingame' },
+  // secondary routes — reachable from inside pages, not on the rail
+  news: { mod: news, icon: 'list', label: 'nav.news', off: true },
+  shop: { mod: shop, icon: 'gift', label: 'nav.shop', off: true },
+  worlds: { mod: worlds, icon: 'globe', label: 'nav.worlds', off: true },
+  screenshots: { mod: screenshots, icon: 'camera', label: 'nav.screenshots', off: true },
+  // in-game features (accessible via the in-game overlay / Right Shift)
+  mods: { mod: mods, icon: 'mods', label: 'nav.mods', off: true },
+  hud: { mod: hud, icon: 'hud', label: 'nav.hud', off: true },
+  minigames: { mod: minigames, icon: 'gamepad', label: 'nav.minigames', off: true },
 };
+
+const RAIL = ['home', 'library', 'discover', 'cosmetics', 'social', null, 'ingame', 'settings'];
 
 let current = null;
 let cleanup = null;
@@ -62,60 +70,85 @@ function render() {
 }
 
 function updateNav() {
-  document.querySelectorAll('.nav-item[data-route]').forEach((n) => {
-    n.classList.toggle('active', n.dataset.route === current);
+  document.querySelectorAll('.rail-item[data-route]').forEach((n) => {
+    n.classList.toggle('active', n.dataset.route === current
+      || (current === 'ingame' && n.dataset.route === 'ingame')
+      || (['mods', 'hud', 'minigames'].includes(current) && n.dataset.route === 'ingame')
+      || (['shop', 'worlds', 'screenshots', 'news'].includes(current) && n.dataset.route === 'home'));
   });
 }
 
-/* ----------------------------------------------------------------- sidebar */
+/* -------------------------------------------------------------- icon rail */
 
-function renderSidebar() {
-  const side = document.getElementById('sidebar');
-  side.innerHTML = '';
+function renderRail() {
+  const rail = document.getElementById('rail');
+  rail.innerHTML = '';
 
-  const logo = el(`
-    <div class="side-logo">
-      <span style="color:#fff">${icon('logo')}</span>
-      <div class="wordmark"><b>HORUS</b><span>CLIENT</span></div>
-    </div>`);
-  side.appendChild(logo);
+  rail.appendChild(el(`<div class="rail-logo" title="Horus Client">${icon('logo')}</div>`));
 
-  const nav = el('<nav class="side-nav" aria-label="Main"></nav>');
-  const order = ['home', 'news', 'library', 'mods', 'hud', null, 'shop', 'cosmetics', 'minigames', null, 'social', 'worlds', 'screenshots', null, 'settings'];
-  for (const key of order) {
-    if (!key) { nav.appendChild(el('<div class="nav-sep"></div>')); continue; }
+  const nav = el('<nav class="rail-nav" aria-label="Main"></nav>');
+  for (const key of RAIL) {
+    if (!key) { nav.appendChild(el('<div class="rail-spacer"></div>')); continue; }
     const r = routes[key];
-    const item = el(`<button class="nav-item" data-route="${key}">${icon(r.icon)}<span class="nav-label">${esc(t(r.label))}</span></button>`);
+    const item = el(`<button class="rail-item" data-route="${key}" aria-label="${esc(t(r.label))}">${icon(r.icon)}<span class="rail-tip">${esc(t(r.label))}</span></button>`);
     item.addEventListener('click', () => { location.hash = `#/${key}`; });
     nav.appendChild(item);
   }
-  side.appendChild(nav);
+  rail.appendChild(nav);
+  updateNav();
+}
 
-  const foot = el('<div class="side-foot"></div>');
-  const acc = el(`
-    <div class="account-card" title="${esc(t('set.account'))}">
-      <canvas></canvas>
-      <div class="col" style="gap:0;min-width:0">
-        <span class="acc-name ellipsis"></span>
-        <span class="acc-type"></span>
+/* ----------------------------------------------------------------- topbar */
+
+function renderTopbar() {
+  const bar = document.getElementById('topbar');
+  bar.innerHTML = '';
+  const profile = selectedProfile();
+  const online = 18000 + Math.floor(Math.random() * 900);
+
+  const wrap = el(`
+    <div class="tb-inner">
+      <div class="tb-nav">
+        <button class="tb-arrow" data-nav="back" title="Back">${icon('arrowL')}</button>
+        <button class="tb-arrow" data-nav="fwd" title="Forward">${icon('arrowR')}</button>
+      </div>
+      <div class="tb-title">
+        <b>HORUS<span style="color:var(--accent-2)"> CLIENT</span></b>
+        <span class="tb-online"><span class="dot"></span>${online.toLocaleString()}</span>
+      </div>
+      <div class="grow"></div>
+      <button class="tb-pill tb-instances">${icon('box')}<span class="ellipsis">${profile ? esc(profile.name) : 'No instance'}</span>${icon('chevD')}</button>
+      <button class="tb-pill tb-account">
+        <canvas width="22" height="22"></canvas>
+        <b class="ellipsis">${esc((state.settings.accountName || 'Player').toUpperCase())}</b>${icon('chevD')}
+      </button>
+      <button class="icon-btn tb-friends" title="${esc(t('nav.social'))}">${icon('users')}</button>
+      <button class="icon-btn tb-notif" title="Notifications">${icon('bell')}</button>
+      <div class="tb-winctl">
+        <button class="tb-win" data-win="min" title="Minimize">${icon('winMin')}</button>
+        <button class="tb-win" data-win="max" title="Maximize">${icon('winMax')}</button>
+        <button class="tb-win tb-close" data-win="close" title="Close">${icon('x')}</button>
       </div>
     </div>`);
-  drawFace(acc.querySelector('canvas'), 28);
-  acc.querySelector('.acc-name').textContent = state.settings.accountName || 'Player';
-  acc.querySelector('.acc-type').textContent = state.settings.accountType === 'msa' ? 'Microsoft' : 'Offline';
-  acc.addEventListener('click', () => { location.hash = '#/settings?cat=account'; });
-  foot.appendChild(acc);
 
-  const mode = el(`
-    <div class="mode-line">
-      <span class="mode-badge ${isConnected() ? 'online' : 'demo'}">
-        <span class="dot"></span>${isConnected() ? 'Backend connected' : 'Demo mode'}
-      </span>
-      <span class="mono">v${APP_VERSION}</span>
-    </div>`);
-  foot.appendChild(mode);
-  side.appendChild(foot);
-  updateNav();
+  drawFace(wrap.querySelector('.tb-account canvas'), 22);
+  wrap.querySelector('.tb-instances').addEventListener('click', () => { location.hash = '#/library'; });
+  wrap.querySelector('.tb-account').addEventListener('click', () => { location.hash = '#/settings?cat=account'; });
+  wrap.querySelector('.tb-friends').addEventListener('click', () => { location.hash = '#/social'; });
+  wrap.querySelector('.tb-notif').addEventListener('click', () => { location.hash = '#/social'; });
+  wrap.querySelector('[data-nav="back"]').addEventListener('click', () => history.back());
+  wrap.querySelector('[data-nav="fwd"]').addEventListener('click', () => history.forward());
+  wrap.querySelector('[data-win="close"]').addEventListener('click', async () => {
+    try { await fetch('api/quit', { method: 'POST' }); } catch { /* demo */ }
+    window.close();
+  });
+  wrap.querySelector('[data-win="min"]').addEventListener('click', () => document.body.classList.add('minimized-demo'));
+  bar.appendChild(wrap);
+}
+
+function renderChrome() {
+  renderRail();
+  renderTopbar();
 }
 
 /* ------------------------------------------------------------ settings fx */
@@ -153,7 +186,7 @@ async function boot() {
   loadLocal();
   applySettingsSideEffects();
   lastLang = getLang();
-  renderSidebar();
+  renderChrome();
 
   await detect();
   if (isConnected()) {
@@ -162,7 +195,7 @@ async function boot() {
   }
   if (!state.versions.length) state.versions = DEMO_VERSIONS;
 
-  renderSidebar();
+  renderChrome();
   render();
 
   window.addEventListener('hashchange', render);
@@ -181,11 +214,11 @@ async function boot() {
     applySettingsSideEffects();
     if (getLang() !== lastLang) {
       lastLang = getLang();
-      renderSidebar();
+      renderChrome();
       render();
       return;
     }
-    if (what === 'profiles' || what === 'settings' || what === 'sync') renderSidebar();
+    if (what === 'profiles' || what === 'settings' || what === 'sync') renderChrome();
   });
 }
 
