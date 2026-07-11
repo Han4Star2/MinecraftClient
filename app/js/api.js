@@ -27,11 +27,23 @@ export async function detect() {
     if (!res.ok) throw new Error(String(res.status));
     status = await res.json();
     connected = true;
+    openStream(); // handlers registered before detect() (module init) get their stream now
   } catch {
     connected = false;
     status = null;
   }
   return connected;
+}
+
+function openStream() {
+  if (!connected || !eventHandlers.size || es) return;
+  es = new EventSource('api/events');
+  es.onmessage = (m) => {
+    let evt;
+    try { evt = JSON.parse(m.data); } catch { return; }
+    for (const h of eventHandlers) h(evt);
+  };
+  es.onerror = () => { /* EventSource retries automatically */ };
 }
 
 async function req(method, path, body) {
@@ -55,15 +67,7 @@ export const api = {
 /** Subscribe to server-sent events (launch progress, logs, downloads). */
 export function onEvent(fn) {
   eventHandlers.add(fn);
-  if (connected && !es) {
-    es = new EventSource('api/events');
-    es.onmessage = (m) => {
-      let evt;
-      try { evt = JSON.parse(m.data); } catch { return; }
-      for (const h of eventHandlers) h(evt);
-    };
-    es.onerror = () => { /* EventSource retries automatically */ };
-  }
+  openStream();
   return () => eventHandlers.delete(fn);
 }
 

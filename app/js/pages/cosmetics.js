@@ -389,14 +389,16 @@ function addHat(player, hat, px) {
     player.appendChild(part(0, topY - px(4), solidBox(px(6.5), px(6.5), px(6.5), hat.color)));
     player.appendChild(part(0, topY - px(1.6), solidBox(px(6.8), px(1.4), px(6.8), hat.color2)));
   } else if (hat.id === 'hat-halo') {
-    const halo = el('<div class="p3-part p3-bob"></div>');
+    const halo = el('<div class="p3-part"></div>');
     halo.style.transform = `translate3d(0, ${topY - px(3)}px, 0)`;
+    const bob = el('<div class="p3-bob" style="position:absolute;transform-style:preserve-3d"></div>');
     const ring = el('<div style="position:absolute"></div>');
     const size = px(7);
     ring.style.cssText += `width:${size}px;height:${size}px;left:${-size / 2}px;top:${-size / 2}px;` +
       `transform:rotateX(90deg);border:${px(0.9)}px solid ${hat.color};border-radius:50%;` +
       `box-shadow:0 0 18px ${hat.color}, inset 0 0 12px ${hat.color};`;
-    halo.appendChild(ring);
+    bob.appendChild(ring);
+    halo.appendChild(bob);
     player.appendChild(halo);
   } else if (hat.id === 'hat-crown') {
     player.appendChild(part(0, topY - px(1), solidBox(px(8.6), px(2), px(8.6), hat.color)));

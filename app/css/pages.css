@@ -516,7 +516,7 @@
 .p3-bob { animation: p3-bob 4.5s ease-in-out infinite; }
 @keyframes p3-bob {
   0%, 100% { transform: translateY(0); }
-  50% { translate: 0 -7px; }
+  50% { transform: translateY(-7px); }
 }
 
 .pv-meta { margin-top: 14px; }
