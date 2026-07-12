@@ -59,31 +59,31 @@ jobs:
           fi
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: windows-app/dist/Horus.exe
-          tag_name: v${{ steps.version.outputs.version }}-build.${{ github.run_number }}
-          name: Horus v${{ steps.version.outputs.version }}
-          body: |
-            ## Horus Client v${{ steps.version.outputs.version }}
-
-            **Windows Executable (Self-Installing)**
-            - Double-click `Horus.exe` to install and launch
-            - No separate installer needed
-            - Includes all built-in modules, cosmetics system, mod manager, and more
-
-            **Features:**
-            - Horus Core: JVM optimization & verified-file cache for fast launches
-            - Horus Doctor: Rule-based crash/performance diagnostics
-            - Building system: NBT parser for schematics with material lists
-            - Progress system: XP, levels, and 15 achievements
-            - One-click setup: Playstyle presets (PvP/Survival/Building/Skyblock/Modded)
-            - Practice minigames: Aim Trainer & CPS Test
-            - Screenshot editor: Blur/pixelate with real canvas manipulation
-            - Replay browser: Real Replay-Mod .mcpr file support
-            - Setup sync: Export/import your entire configuration
-            - Server profiles: Bind instances to game servers
-          draft: false
-          prerelease: false
+        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v${{ steps.version.outputs.version }}-build.${{ github.run_number }}"
+          RELEASE_NOTES="## Horus Client v${{ steps.version.outputs.version }}
+
+          **Windows Executable (Self-Installing)**
+          - Double-click \`Horus.exe\` to install and launch
+          - No separate installer needed
+          - Includes all built-in modules, cosmetics system, mod manager, and more
+
+          **Features:**
+          - Horus Core: JVM optimization & verified-file cache for fast launches
+          - Horus Doctor: Rule-based crash/performance diagnostics
+          - Building system: NBT parser for schematics with material lists
+          - Progress system: XP, levels, and 15 achievements
+          - One-click setup: Playstyle presets (PvP/Survival/Building/Skyblock/Modded)
+          - Practice minigames: Aim Trainer & CPS Test
+          - Screenshot editor: Blur/pixelate with real canvas manipulation
+          - Replay browser: Real Replay-Mod .mcpr file support
+          - Setup sync: Export/import your entire configuration
+          - Server profiles: Bind instances to game servers"
+
+          gh release create "$TAG" \
+            --title "Horus v${{ steps.version.outputs.version }}" \
+            --notes "$RELEASE_NOTES" \
+            windows-app/dist/Horus.exe
