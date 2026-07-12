@@ -15,6 +15,8 @@ import { listMods, toggleMod, deleteMod, modsDir } from './mods.js';
 import { listFolder, toggleFolderItem, deleteFolderItem, contentDir } from './folders.js';
 import { setPackOrder } from './options.js';
 import { searchMods, installMod, checkJarUpdates, applyJarUpdates } from './modrinth.js';
+import { diagnose } from './doctor.js';
+import { listSchematics, parseSchematic } from './schematics.js';
 import { startMsa, msaStatus, signOut } from './msa.js';
 import { pingServer } from './ping.js';
 import { cfSearch, cfInstall } from './curseforge.js';
@@ -104,7 +106,7 @@ export async function handleApi(req, res, url) {
       const profile = store.getProfile(decodeURIComponent(m[1]));
       if (!profile) { sendJson(res, 404, { error: 'unknown profile' }); return true; }
       const sub = url.searchParams.get('sub') || '';
-      const dir = ['mods', 'shaderpacks', 'resourcepacks', 'saves', 'screenshots'].includes(sub)
+      const dir = ['mods', 'shaderpacks', 'resourcepacks', 'saves', 'screenshots', 'schematics', 'replay_recordings'].includes(sub)
         ? path.join(store.profileGameDir(profile), sub)
         : store.profileGameDir(profile);
       await ensureDir(dir);
@@ -319,6 +321,31 @@ export async function handleApi(req, res, url) {
     /* ---------------------------------------------------------------- logs */
     if (method === 'GET' && pathname === '/api/logs') {
       sendJson(res, 200, { logs: events.recentLogs(Number(url.searchParams.get('n')) || 400) });
+      return true;
+    }
+
+    /* ---------------------------------------------------------- schematics */
+    m = pathname.match(/^\/api\/profiles\/([^/]+)\/schematics$/);
+    if (m && method === 'GET') {
+      const profile = store.getProfile(decodeURIComponent(m[1]));
+      if (!profile) { sendJson(res, 404, { error: 'unknown profile' }); return true; }
+      sendJson(res, 200, await listSchematics(profile));
+      return true;
+    }
+    m = pathname.match(/^\/api\/profiles\/([^/]+)\/schematics\/parse$/);
+    if (m && method === 'GET') {
+      const profile = store.getProfile(decodeURIComponent(m[1]));
+      if (!profile) { sendJson(res, 404, { error: 'unknown profile' }); return true; }
+      const file = url.searchParams.get('file') || '';
+      if (!file) { sendJson(res, 400, { error: 'missing file' }); return true; }
+      sendJson(res, 200, await parseSchematic(profile, file));
+      return true;
+    }
+
+    /* -------------------------------------------------------------- doctor */
+    if (method === 'GET' && pathname === '/api/doctor') {
+      const profile = store.getProfile(url.searchParams.get('profileId') || '') || null;
+      sendJson(res, 200, await diagnose(profile));
       return true;
     }
 

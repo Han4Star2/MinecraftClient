@@ -100,6 +100,7 @@ export function render(root) {
 
   /* ------------------------------------------------------------ performance */
   function paintPerformance() {
+    paintDoctor();
     const g = group(t('set.performance'));
 
     const boostIdx = Math.max(0, FPS_BOOST_LEVELS.findIndex((l) => l.id === (s.fpsBoost || 'off')));
@@ -147,6 +148,57 @@ export function render(root) {
 
     const g2 = group('Launcher footprint');
     g2.appendChild(el(`<div class="setting-row"><div class="s-label"><div class="name">Why Horus stays light</div><div class="desc">No Electron, no bundled browser: the backend is a dependency-free Node process (~35 MB RSS) and this UI runs in the browser/webview you already have. Turn off animations above to go even lower.</div></div><span class="badge free">~35 MB</span></div>`));
+  }
+
+  /* ----------------------------------------------------------------- doctor */
+  /* Rule-based assistant: concrete checks over real local state — hardware,
+     settings, the profile's mods folder and the latest crash report. */
+  function paintDoctor() {
+    const g = group('Horus Assistant');
+    const box = el(`<div class="col" style="gap:8px;padding:4px 0"><div class="skeleton" style="height:44px"></div></div>`);
+    g.appendChild(box);
+    if (!isConnected()) {
+      box.innerHTML = `<div class="muted small">${esc(t('common.demo'))} — the assistant checks hardware, mod conflicts and crash logs when the backend is running.</div>`;
+      return;
+    }
+    (async () => {
+      try {
+        const p = selectedProfile();
+        const { findings } = await api.get(`api/doctor${p ? `?profileId=${encodeURIComponent(p.id)}` : ''}`);
+        box.innerHTML = '';
+        const sevIcon = { ok: 'check', info: 'info', warn: 'alert', crit: 'alert' };
+        const sevColor = { ok: 'var(--green)', info: 'var(--blue, #4b7bec)', warn: 'var(--gold)', crit: 'var(--accent-2)' };
+        for (const f of findings) {
+          const row = el(`
+            <div class="row doctor-row" style="align-items:flex-start;gap:10px">
+              <span style="color:${sevColor[f.severity]};flex:none;line-height:0;margin-top:2px">${icon(sevIcon[f.severity])}</span>
+              <div class="grow" style="min-width:0">
+                <div style="font-weight:700;font-size:13.5px">${esc(f.title)}</div>
+                <div class="small muted">${esc(f.detail)}</div>
+              </div>
+            </div>`);
+          if (f.fix) {
+            const btn = el(`<button class="btn small dark" style="flex:none">${esc(f.fix.label.length > 40 ? 'How to fix' : f.fix.label)}</button>`);
+            btn.addEventListener('click', () => {
+              if (f.fix.settings) {
+                Object.assign(s, f.fix.settings);
+                save('settings');
+                toast('Applied ✓ — re-checking…', 'ok');
+                paint();
+              } else if (f.fix.link) {
+                location.hash = f.fix.link;
+              } else {
+                toast(f.fix.label, 'info', 7000);
+              }
+            });
+            row.appendChild(btn);
+          }
+          box.appendChild(row);
+        }
+      } catch (e) {
+        box.innerHTML = `<div class="muted small">Assistant: ${esc(e.message)}</div>`;
+      }
+    })();
   }
 
   /* -------------------------------------------------------------- minecraft */

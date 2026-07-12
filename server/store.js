@@ -5,6 +5,7 @@
 import os from 'node:os';
 import path from 'node:path';
 import { readJson, writeJson, ensureDir } from './util.js';
+import { initVerifiedCache } from './core.js';
 
 let dataDir = null;
 let settings = null;
@@ -65,6 +66,7 @@ export async function initStore({ portable = false, data = '' } = {}) {
     || process.env.HORUS_DATA
     || (portable ? path.resolve('data') : path.join(os.homedir(), '.horus'));
   await ensureDir(dataDir);
+  initVerifiedCache(dataDir);
   settings = { ...DEFAULT_SETTINGS, ...(await readJson(settingsFile(), {})) };
   profiles = await readJson(profilesFile(), null);
   if (!Array.isArray(profiles) || !profiles.length) {

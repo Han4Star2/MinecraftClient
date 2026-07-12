@@ -15,6 +15,7 @@ import { dirs, getSettings, profileGameDir, touchProfile, getProfile } from './s
 import { ensureDir, exists, mojangOs, mojangArch, offlineUuid, readJson, writeJson, writeFileAtomic } from './util.js';
 import { getMsaSession } from './msa.js';
 import { patchOptions, videoEntriesFromSettings } from './options.js';
+import { tunedJvmArgs } from './core.js';
 
 let active = null; // { profileId, child, abort, startedAt, phase }
 
@@ -204,11 +205,7 @@ export function buildCommand({ json, profile, session, paths, javaBin, settings,
   };
 
   const ramMb = profile.ramMb || settings.defaultRamMb || 2048;
-  const jvm = [`-Xms${Math.min(1024, ramMb)}M`, `-Xmx${ramMb}M`];
-  if (settings.gc === 'ZGC') jvm.push('-XX:+UseZGC');
-  else if (settings.gc === 'Shenandoah') jvm.push('-XX:+UseShenandoahGC');
-  else if (settings.gc === 'Parallel') jvm.push('-XX:+UseParallelGC');
-  else jvm.push('-XX:+UseG1GC', '-XX:G1NewSizePercent=20', '-XX:G1ReservePercent=20', '-XX:MaxGCPauseMillis=50');
+  const jvm = tunedJvmArgs({ ramMb, gc: settings.gc, javaMajor: json.javaVersion?.majorVersion || 17 });
   if (settings.threads > 0) jvm.push(`-XX:ActiveProcessorCount=${settings.threads}`);
   for (const extra of [settings.jvmArgs, profile.jvmArgs]) {
     if (extra) jvm.push(...extra.split(/\s+/).filter(Boolean));

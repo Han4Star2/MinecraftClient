@@ -1,11 +1,13 @@
 /* Download queue: parallel, SHA-1 verified, resumable in the sense that
-   files already on disk with a matching hash are skipped. Progress events
-   stream to the UI over SSE. */
+   files already on disk with a matching hash are skipped. Files verified
+   once are remembered by size+mtime (Horus Core verified-cache), so repeat
+   launches skip re-hashing entirely. Progress streams to the UI over SSE. */
 
 import { promises as fsp } from 'node:fs';
 import path from 'node:path';
 import { fetchBuf } from './net.js';
 import { sha1, ensureDir, exists } from './util.js';
+import { isVerified, markVerified, flushVerifiedCache } from './core.js';
 
 /**
  * @param {Array<{url:string, dest:string, sha1?:string, size?:number, label?:string}>} tasks
@@ -38,17 +40,28 @@ export async function downloadAll(tasks, { concurrency = 4, proxy = undefined, o
   }
 
   const workers = Array.from({ length: Math.max(1, Math.min(concurrency, 16)) }, () => worker());
-  await Promise.all(workers);
+  try {
+    await Promise.all(workers);
+  } finally {
+    await flushVerifiedCache();
+  }
   if (errors.length) throw new Error(errors.join('; '));
   return { done, bytes };
 }
 
 async function downloadOne(task, proxy, signal, attempt = 0) {
+  // Verified on a previous run and untouched since (size+mtime match)?
+  // Skip both the network and the re-hash.
+  if (await isVerified(task.dest, task.sha1)) return 0;
+
   // Already present and verified? Skip the network entirely.
   if (await exists(task.dest)) {
     if (!task.sha1) return 0;
     const cur = sha1(await fsp.readFile(task.dest));
-    if (cur === task.sha1) return 0;
+    if (cur === task.sha1) {
+      await markVerified(task.dest, task.sha1);
+      return 0;
+    }
   }
 
   try {
@@ -63,6 +76,7 @@ async function downloadOne(task, proxy, signal, attempt = 0) {
     const tmp = `${task.dest}.part`;
     await fsp.writeFile(tmp, res.body);
     await fsp.rename(tmp, task.dest);
+    await markVerified(task.dest, task.sha1);
     return res.body.length;
   } catch (e) {
     if (attempt < 2 && !String(e.message).includes('cancelled') && !String(e.message).includes('sha1')) {
