@@ -326,6 +326,36 @@
 .mod-card .mod-foot { display: flex; gap: 8px; align-items: center; }
 .mod-card .mod-version { font-size: 11px; color: var(--txt3); }
 
+/* recommended pack */
+.rec-group-label {
+  margin: 12px 2px 6px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--txt3);
+}
+.rec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 6px;
+}
+.rec-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  font-size: 13px;
+  min-width: 0;
+}
+.rec-item.done { border-color: rgba(47, 168, 102, 0.5); }
+.rec-item.skip { opacity: 0.55; }
+.rec-item .rec-note { font-weight: 400; }
+.preset-box { display: flex; gap: 6px; align-items: center; }
+.order-btns { display: flex; gap: 3px; flex: none; }
+
 .mods-section-label {
   margin: 26px 0 12px;
   font-size: 12px;
@@ -444,6 +474,28 @@
 .hud-list-row .switch { transform: scale(0.82); }
 .hud-list-row .lock-flag { display: flex; align-items: center; color: #f3c14b; flex: none; }
 .hud-list-row .lock-flag svg { width: 13px; height: 13px; }
+
+.hud-group-label {
+  margin: 10px 2px 3px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--txt3);
+}
+.hud-group-label:first-child { margin-top: 2px; }
+
+/* small demo widgets inside HUD elements */
+.hud-graph { display: flex; align-items: flex-end; gap: 1.5px; width: 92px; height: 30px; }
+.hud-graph i { flex: 1; background: currentColor; border-radius: 1px; opacity: 0.85; }
+.hud-graph.clicks { width: 60px; height: 20px; }
+.hud-xpbar { width: 120px; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, 0.18); overflow: hidden; }
+.hud-xpbar i { display: block; height: 100%; background: currentColor; }
+.hud-xpbar.boss { width: 150px; margin-top: 2px; }
+.hud-tablist { display: flex; flex-direction: column; gap: 1.5px; font-size: 10px; min-width: 110px; }
+.hud-tablist b { text-align: center; font-size: 10.5px; margin-bottom: 1.5px; }
+.hud-tablist span { opacity: 0.9; }
+.hud-tablist.chat { min-width: 150px; }
 
 @media (max-width: 1000px) {
   .hud-layout { flex-direction: column; }

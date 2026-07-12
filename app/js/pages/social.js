@@ -246,13 +246,14 @@ export function render(root) {
 
     for (const f of s.friends) {
       const row = el(`
-        <div class="friend-row">
+        <div class="friend-row" style="${f.blocked ? 'opacity:0.5' : ''}">
           <div class="friend-avatar"><canvas></canvas><span class="st-dot st-${f.status}"></span></div>
           <div class="grow" style="min-width:0">
-            <div class="friend-name ellipsis">${esc(f.name)}</div>
+            <div class="friend-name ellipsis">${esc(f.name)}${f.blocked ? ' <span class="badge outline">blocked</span>' : ''}</div>
             <div class="friend-sub ellipsis">${esc(f.detail || f.status)}</div>
           </div>
-          <button class="icon-btn small b-msg" title="Message">${icon('message')}</button>
+          <button class="icon-btn small b-msg" title="Message" ${f.blocked ? 'disabled' : ''}>${icon('message')}</button>
+          <button class="icon-btn small b-block" title="${f.blocked ? 'Unblock' : 'Block — hides messages & invites'}">${icon(f.blocked ? 'check' : 'shield')}</button>
         </div>`);
       drawFace(row.querySelector('canvas'), 38);
       row.querySelector('.b-msg').addEventListener('click', () => {
@@ -260,6 +261,12 @@ export function render(root) {
         chatWith = f.name;
         page.querySelectorAll('[data-tab]').forEach((x) => x.classList.toggle('active', x.dataset.tab === 'chat'));
         paintMain();
+      });
+      row.querySelector('.b-block').addEventListener('click', () => {
+        f.blocked = !f.blocked;
+        persist();
+        paintSide();
+        toast(f.blocked ? `${f.name} blocked — messages & invites are hidden` : `${f.name} unblocked`, 'info');
       });
       card.appendChild(row);
     }

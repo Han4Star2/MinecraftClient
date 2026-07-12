@@ -63,6 +63,30 @@ export const MODS = [
   { id: 'toggle-sprint', name: 'Toggle Sprint', cat: 'pvp', icon: 'zap', on: true,
     desc: 'Sprint without holding the key. Optional HUD text.',
     cfg: [select('mode', 'Mode', ['Toggle', 'Hold']), toggle('hudText', 'Show HUD text', true)] },
+  { id: 'toggle-sneak', name: 'Toggle Sneak', cat: 'pvp', icon: 'user', on: false,
+    desc: 'Sneak stays on until you press the key again.',
+    cfg: [toggle('hudText', 'Show HUD text', true), keybind('key', 'Sneak key', 'Shift')] },
+  { id: 'auto-sprint', name: 'Auto Sprint', cat: 'pvp', icon: 'running', on: false,
+    desc: 'Always sprint while moving forward — no key needed.',
+    cfg: [toggle('allDirs', 'Sprint in all directions', false)] },
+  { id: 'freelook', name: 'Freelook', cat: 'pvp', icon: 'eye', on: false,
+    desc: 'Look around without changing your movement direction.',
+    cfg: [keybind('key', 'Freelook key', 'LAlt'), toggle('invert', 'Invert camera', false)] },
+  { id: 'hitboxes', name: 'Hitboxes', cat: 'pvp', icon: 'box', on: false, boostCutoff: 2,
+    desc: 'Show entity hitboxes with custom colors.',
+    cfg: [color('color', 'Hitbox color', '#ff3355'), toggle('eyeline', 'Show eye line', false)] },
+  { id: 'hit-animation', name: 'Hit Animation', cat: 'pvp', icon: 'sword', on: false, boostCutoff: 2,
+    desc: 'Legacy block-hit and hurt animations.',
+    cfg: [select('style', 'Style', ['1.8', '1.9+', 'Off'], '1.8')] },
+  { id: 'damage-tint', name: 'Damage Tint', cat: 'pvp', icon: 'heart', on: false, boostCutoff: 2,
+    desc: 'Adjust the red flash entities show when hurt.',
+    cfg: [slider('alpha', 'Tint strength', 0, 100, 60, '%'), color('color', 'Tint color', '#ff2a2a')] },
+  { id: 'item-counter', name: 'Item Counter', cat: 'pvp', icon: 'layers', on: false, boostCutoff: 3,
+    desc: 'Counts arrows, pearls, blocks or any held item stack.',
+    cfg: [toggle('arrows', 'Count arrows', true), toggle('blocks', 'Count blocks', true)] },
+  { id: 'enemy-info', name: 'Enemy Info', cat: 'pvp', icon: 'crosshair', on: false, boostCutoff: 3,
+    desc: 'Health and armor of the player you are looking at.',
+    cfg: [toggle('armor', 'Show enemy armor', true), toggle('health', 'Show health', true)] },
   { id: 'zoom', name: 'Zoom', cat: 'utility', icon: 'search', on: true,
     desc: 'Smooth optical zoom on a hotkey.',
     cfg: [slider('factor', 'Zoom factor', 2, 10, 4, 'x'), toggle('smooth', 'Smooth camera', true), keybind('key', 'Zoom key', 'C')] },
@@ -100,8 +124,50 @@ export const MODS = [
   { id: 'nametags', name: 'Nametags', cat: 'utility', icon: 'user', on: false, boostCutoff: 2,
     desc: 'Cleaner nametags, optional own tag.' },
   { id: 'chat-tweaks', name: 'Chat Tweaks', cat: 'utility', icon: 'message', on: true, boostCutoff: 3,
-    desc: 'Timestamps, smooth chat, copy on click.',
-    cfg: [toggle('timestamps', 'Timestamps', true), toggle('smooth', 'Smooth chat', true), toggle('copy', 'Click to copy', true)] },
+    desc: 'Copyable chat, saved history, clickable links, colors, timestamps, scale & background.',
+    cfg: [toggle('timestamps', 'Timestamps', true), toggle('smooth', 'Smooth chat', true), toggle('copy', 'Click to copy', true),
+      toggle('history', 'Keep history across worlds', true), toggle('links', 'Clickable links', true), toggle('colors', 'Colored messages', true),
+      slider('scale', 'Chat scale', 50, 150, 100, '%'), slider('bg', 'Background opacity', 0, 100, 50, '%')] },
+  { id: 'chat-filter', name: 'Chat Filter', cat: 'utility', icon: 'shield', on: false,
+    desc: 'Hide messages matching your filter words; highlight mentions.',
+    cfg: [text('words', 'Filtered words (comma-separated)', ''), toggle('mentions', 'Highlight mentions of your name', true), toggle('sound', 'Mention sound', true)] },
+  { id: 'better-tab', name: 'Better Tab', cat: 'utility', icon: 'list', on: false, boostCutoff: 3,
+    desc: 'Searchable, restyled tab player list with ping numbers.',
+    cfg: [toggle('ping', 'Numeric ping', true), slider('rows', 'Max rows', 10, 80, 40)] },
+  { id: 'waypoints', name: 'Waypoints', cat: 'utility', icon: 'compass', on: false, boostCutoff: 3,
+    desc: 'Set, name and color waypoints; beam and distance in the world.',
+    cfg: [keybind('key', 'New waypoint key', 'B'), toggle('deathpoint', 'Auto deathpoint', true)] },
+  { id: 'minimap', name: 'Minimap', cat: 'utility', icon: 'grid', on: false, boostCutoff: 2,
+    desc: 'Rotating minimap with entities, waypoints and cave mode.',
+    cfg: [slider('size', 'Size', 80, 240, 140, 'px'), toggle('entities', 'Show entities', true), toggle('caves', 'Cave mode', false)] },
+  { id: 'world-map', name: 'World Map', cat: 'utility', icon: 'globe', on: false, boostCutoff: 1,
+    desc: 'Fullscreen explored-world map, shared with the minimap.',
+    cfg: [keybind('key', 'Open map', 'M')] },
+  { id: 'inventory-tweaks', name: 'Inventory Tweaks', cat: 'utility', icon: 'package', on: false,
+    desc: 'Sort, quick-stack to chests, auto-refill and inventory search.',
+    cfg: [keybind('sortKey', 'Sort key', 'R'), toggle('quickStack', 'Quick-stack button in chests', true), toggle('refill', 'Auto-refill hotbar', true), toggle('search', 'Inventory search bar', true)] },
+  { id: 'item-scroller', name: 'Item Scroller', cat: 'utility', icon: 'rotate', on: false,
+    desc: 'Move item stacks with the scroll wheel, drag to mass-move.' },
+  { id: 'shulker-preview', name: 'Shulker Preview', cat: 'utility', icon: 'gift', on: false,
+    desc: 'See shulker box and bundle contents in the tooltip.',
+    cfg: [toggle('bundles', 'Also preview bundles', true)] },
+  { id: 'tooltips-plus', name: 'Better Tooltips', cat: 'utility', icon: 'info', on: false,
+    desc: 'Durability, enchant details, food stats and item IDs in tooltips.',
+    cfg: [toggle('durability', 'Show durability', true), toggle('food', 'Show food stats', true), toggle('ids', 'Show item IDs', false)] },
+  { id: 'screenshot-tool', name: 'Screenshot Tool', cat: 'utility', icon: 'camera', on: true,
+    desc: 'Instant preview after F2 with copy, share and folder shortcuts.',
+    cfg: [keybind('key', 'Screenshot key', 'F2'), toggle('preview', 'Show preview popup', true)] },
+  { id: 'replay', name: 'Replay', cat: 'utility', icon: 'screenshot', on: false, boostCutoff: 1,
+    desc: 'Record sessions, free camera, slow motion, camera paths — UI for the Replay Mod (installable below).',
+    cfg: [toggle('autoRecord', 'Record automatically', false), slider('slowmo', 'Slow-motion factor', 10, 100, 50, '%'), keybind('key', 'Replay menu', 'F8')] },
+  { id: 'voice', name: 'Voice Chat', cat: 'utility', icon: 'headset', on: false,
+    desc: 'Mic, volume, push-to-talk, channels, friends-only & per-player mute — UI for Simple Voice Chat (installable below).',
+    cfg: [select('mic', 'Microphone', ['Default', 'Device 1', 'Device 2']), slider('volume', 'Voice volume', 0, 100, 80, '%'),
+      slider('range', 'Voice range', 8, 64, 48, ' blocks'), toggle('ptt', 'Push-to-talk', true), keybind('pttKey', 'Push-to-talk key', 'V'),
+      select('channel', 'Channel', ['Proximity', 'Group 1', 'Group 2', 'Friends']), toggle('friendsOnly', 'Hear friends only', false)] },
+  { id: 'discord-rpc', name: 'Discord Rich Presence', cat: 'utility', icon: 'gamepad', on: false,
+    desc: 'Show server and game state in your Discord status. Local IPC only — nothing is sent anywhere else.',
+    cfg: [toggle('showServer', 'Show current server', true), toggle('showVersion', 'Show version', true)] },
   { id: 'memory', name: 'Memory Display', cat: 'hud', icon: 'cpu', on: false, boostCutoff: 4,
     desc: 'RAM usage of the game process.' },
   { id: 'session-timer', name: 'Session Timer', cat: 'hud', icon: 'clock', on: false, boostCutoff: 4,
@@ -145,6 +211,64 @@ export const MOD_CATS = [
   { id: 'utility', label: 'Utility' },
 ];
 
+/* --------------------------------------------------------- recommended pack */
+/* The pre-configured Fabric mod collection — the "biggest difference to a
+   plain setup". Real Modrinth slugs, installed as plain jars into the
+   profile's mods/ folder with required dependencies resolved automatically. */
+
+export const RECOMMENDED_PACK = [
+  { group: 'Performance', items: [
+    { slug: 'sodium', name: 'Sodium', note: 'The rendering engine — biggest FPS win' },
+    { slug: 'lithium', name: 'Lithium', note: 'Game-logic optimizations, vanilla-identical' },
+    { slug: 'ferrite-core', name: 'FerriteCore', note: 'Big memory-usage reduction' },
+    { slug: 'modernfix', name: 'ModernFix', note: 'Faster launch, lower RAM, bug fixes' },
+    { slug: 'entityculling', name: 'Entity Culling', note: 'Skip rendering hidden entities' },
+    { slug: 'moreculling', name: 'More Culling', note: 'Cull more block faces & particles' },
+    { slug: 'dynamic-fps', name: 'Dynamic FPS', note: 'Idle FPS drop when unfocused' },
+    { slug: 'krypton', name: 'Krypton', note: 'Network stack optimizations' },
+    { slug: 'memoryleakfix', name: 'Memory Leak Fix', note: 'Patches known memory leaks' },
+    { slug: 'lazydfu', name: 'LazyDFU', note: 'Faster startup (older versions)' },
+    { slug: 'fastquit', name: 'FastQuit', note: 'Leave worlds without the saving wait' },
+    { slug: 'no-chat-reports', name: 'No Chat Reports', note: 'Strips chat-report metadata' },
+  ] },
+  { group: 'Graphics', items: [
+    { slug: 'iris', name: 'Iris Shaders', note: 'Shader support (OptiFine-compatible packs)' },
+    { slug: 'indium', name: 'Indium', note: 'Sodium compatibility for rendering-API mods' },
+    { slug: 'continuity', name: 'Continuity', note: 'Connected textures' },
+    { slug: 'lambdynamiclights', name: 'LambDynamicLights', note: 'Held torches light the world' },
+    { slug: 'zoomify', name: 'Zoomify', note: 'Smooth configurable zoom' },
+  ] },
+  { group: 'Quality of Life', items: [
+    { slug: 'modmenu', name: 'Mod Menu', note: 'In-game mod list & config screens' },
+    { slug: 'cloth-config', name: 'Cloth Config', note: 'Config library many mods need' },
+    { slug: 'appleskin', name: 'AppleSkin', note: 'Hunger & saturation preview' },
+    { slug: 'betterf3', name: 'BetterF3', note: 'Readable, configurable debug HUD' },
+    { slug: 'jade', name: 'Jade', note: '"What am I looking at" tooltips' },
+    { slug: 'emi', name: 'EMI', note: 'Recipe viewer' },
+    { slug: 'inventory-profiles-next', name: 'Inventory Profiles Next', note: 'Sorting & inventory tools' },
+    { slug: 'shulkerboxtooltip', name: 'Shulker Box Tooltip', note: 'Preview shulker contents' },
+    { slug: 'better-stats', name: 'Better Statistics Screen', note: 'Useful stats screen' },
+    { slug: 'mouse-tweaks', name: 'Mouse Tweaks', note: 'Better drag & scroll in inventories' },
+    { slug: 'chat-heads', name: 'Chat Heads', note: 'Player heads next to chat messages' },
+  ] },
+];
+
+/* ---------------------------------------------------------------- keybinds */
+/* Central client shortcuts — shown in Settings and the in-game overlay. */
+
+export const KEYBIND_ACTIONS = [
+  { id: 'overlay', label: 'Open in-game overlay', def: 'RShift' },
+  { id: 'zoom', label: 'Zoom', def: 'C' },
+  { id: 'freelook', label: 'Freelook', def: 'LAlt' },
+  { id: 'freecam', label: 'Freecam', def: 'F4' },
+  { id: 'screenshot', label: 'Screenshot', def: 'F2' },
+  { id: 'fullbright', label: 'Toggle Fullbright', def: 'G' },
+  { id: 'emotes', label: 'Emote wheel', def: 'B' },
+  { id: 'ptt', label: 'Voice push-to-talk', def: 'V' },
+  { id: 'hudEditor', label: 'HUD editor', def: 'H' },
+  { id: 'worldMap', label: 'World map', def: 'M' },
+];
+
 /* -------------------------------------------------------------- cosmetics */
 
 export const COSMETICS = [
@@ -176,6 +300,11 @@ export const COSMETICS = [
 
   { id: 'emote-wave', cat: 'emote', name: 'Wave', anim: 'wave' },
   { id: 'emote-spin', cat: 'emote', name: 'Spin', anim: 'spin' },
+  { id: 'emote-sit', cat: 'emote', name: 'Sit', anim: 'sit' },
+  { id: 'emote-cheer', cat: 'emote', name: 'Cheer', anim: 'cheer' },
+  { id: 'emote-dance', cat: 'emote', name: 'Dance', anim: 'dance' },
+  { id: 'emote-clap', cat: 'emote', name: 'Clap', anim: 'clap' },
+  { id: 'emote-point', cat: 'emote', name: 'Point', anim: 'point' },
 ];
 
 export const COS_CATS = [
@@ -188,20 +317,65 @@ export const COS_CATS = [
 ];
 
 /* ------------------------------------------------------------ HUD elements */
+/* Grouped like the in-game editor: Performance · PvP · Movement · Player ·
+   World · Misc. Every element is draggable/scalable/colorable; boostCutoff
+   is the FPS-Boost level at which it is force-hidden (fps never hides). */
+
+export const HUD_GROUPS = [
+  { id: 'performance', label: 'Performance' },
+  { id: 'pvp', label: 'PvP' },
+  { id: 'movement', label: 'Movement' },
+  { id: 'player', label: 'Player' },
+  { id: 'world', label: 'World' },
+  { id: 'misc', label: 'Misc' },
+];
 
 export const HUD_DEFAULTS = [
-  { id: 'fps', label: 'FPS', x: 2.5, y: 3, on: true, scale: 1, color: '#ffffff', boxed: true },
-  { id: 'cps', label: 'CPS', x: 2.5, y: 10, on: true, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 5 },
-  { id: 'ping', label: 'Ping', x: 2.5, y: 17, on: true, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 5 },
-  { id: 'coords', label: 'Coordinates', x: 2.5, y: 88, on: true, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 4 },
-  { id: 'keystrokes', label: 'Keystrokes', x: 84, y: 56, on: true, scale: 1, color: '#ffffff', boxed: false, boostCutoff: 3 },
-  { id: 'armor', label: 'Armor Status', x: 84, y: 26, on: true, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 4 },
-  { id: 'clock', label: 'Clock', x: 88, y: 3, on: true, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 3 },
-  { id: 'direction', label: 'Direction', x: 45, y: 3, on: false, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 1 },
-  { id: 'speed', label: 'Speed', x: 2.5, y: 60, on: false, scale: 1, color: '#9be8ff', boxed: true, boostCutoff: 1 },
-  { id: 'combo', label: 'Combo', x: 45, y: 62, on: false, scale: 1.2, color: '#ffd35b', boxed: false, boostCutoff: 2 },
-  { id: 'reach', label: 'Reach', x: 45, y: 70, on: false, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 2 },
-  { id: 'potions', label: 'Potions', x: 84, y: 80, on: true, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 4 },
+  /* performance */
+  { id: 'fps', label: 'FPS', group: 'performance', x: 2.5, y: 3, on: true, scale: 1, color: '#ffffff', boxed: true },
+  { id: 'avgfps', label: 'Avg FPS', group: 'performance', x: 9, y: 3, on: false, scale: 1, color: '#c9d4e8', boxed: true, boostCutoff: 4 },
+  { id: 'fpsgraph', label: 'FPS Graph', group: 'performance', x: 2.5, y: 24, on: false, scale: 1, color: '#5ad391', boxed: true, boostCutoff: 1 },
+  { id: 'ping', label: 'Ping', group: 'performance', x: 2.5, y: 17, on: true, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 5 },
+  { id: 'tps', label: 'TPS', group: 'performance', x: 9, y: 17, on: false, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 4 },
+  { id: 'ram', label: 'RAM Usage', group: 'performance', x: 2.5, y: 31, on: false, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 4 },
+  { id: 'cpu', label: 'CPU Usage', group: 'performance', x: 2.5, y: 38, on: false, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 4 },
+  /* pvp */
+  { id: 'cps', label: 'CPS (L | R)', group: 'pvp', x: 2.5, y: 10, on: true, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 5 },
+  { id: 'combo', label: 'Combo Counter', group: 'pvp', x: 45, y: 62, on: false, scale: 1.2, color: '#ffd35b', boxed: false, boostCutoff: 2 },
+  { id: 'reach', label: 'Reach', group: 'pvp', x: 45, y: 70, on: false, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 2 },
+  { id: 'clickhistory', label: 'Click History', group: 'pvp', x: 9, y: 10, on: false, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 2 },
+  { id: 'hits', label: 'Hit Counter', group: 'pvp', x: 45, y: 78, on: false, scale: 1, color: '#ff9b9b', boxed: true, boostCutoff: 2 },
+  /* movement */
+  { id: 'coords', label: 'Coordinates (XYZ)', group: 'movement', x: 2.5, y: 88, on: true, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 4 },
+  { id: 'direction', label: 'Direction', group: 'movement', x: 45, y: 3, on: false, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 1 },
+  { id: 'speed', label: 'Speed', group: 'movement', x: 2.5, y: 60, on: false, scale: 1, color: '#9be8ff', boxed: true, boostCutoff: 1 },
+  { id: 'height', label: 'Y Level', group: 'movement', x: 2.5, y: 81, on: false, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 1 },
+  { id: 'chunk', label: 'Chunk Coords', group: 'movement', x: 2.5, y: 95, on: false, scale: 1, color: '#c9d4e8', boxed: true, boostCutoff: 1 },
+  { id: 'biome', label: 'Biome', group: 'movement', x: 14, y: 88, on: false, scale: 1, color: '#a8e8b0', boxed: true, boostCutoff: 2 },
+  /* player */
+  { id: 'armor', label: 'Armor Status', group: 'player', x: 84, y: 26, on: true, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 4 },
+  { id: 'itemdur', label: 'Item Durability', group: 'player', x: 84, y: 47, on: false, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 3 },
+  { id: 'hunger', label: 'Hunger', group: 'player', x: 60, y: 88, on: false, scale: 1, color: '#f0b46a', boxed: true, boostCutoff: 4 },
+  { id: 'health', label: 'Health', group: 'player', x: 33, y: 88, on: false, scale: 1, color: '#ff6a6a', boxed: true, boostCutoff: 4 },
+  { id: 'xpbar', label: 'XP Bar', group: 'player', x: 40, y: 82, on: false, scale: 1, color: '#7ce860', boxed: false, boostCutoff: 3 },
+  { id: 'level', label: 'XP Level', group: 'player', x: 48.5, y: 76, on: false, scale: 1, color: '#7ce860', boxed: false, boostCutoff: 3 },
+  { id: 'totems', label: 'Totem Counter', group: 'player', x: 55, y: 70, on: false, scale: 1, color: '#ffe08a', boxed: true, boostCutoff: 3 },
+  /* world */
+  { id: 'clock', label: 'Time', group: 'world', x: 88, y: 3, on: true, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 3 },
+  { id: 'playtime', label: 'Playtime', group: 'world', x: 88, y: 10, on: false, scale: 1, color: '#c9d4e8', boxed: true, boostCutoff: 2 },
+  { id: 'weather', label: 'Weather', group: 'world', x: 81, y: 3, on: false, scale: 1, color: '#9be8ff', boxed: true, boostCutoff: 2 },
+  { id: 'moon', label: 'Moon Phase', group: 'world', x: 81, y: 10, on: false, scale: 1, color: '#d8d4f8', boxed: true, boostCutoff: 1 },
+  /* misc */
+  { id: 'keystrokes', label: 'Keystrokes', group: 'misc', x: 84, y: 56, on: true, scale: 1, color: '#ffffff', boxed: false, boostCutoff: 3 },
+  { id: 'potions', label: 'Potion Effects', group: 'misc', x: 84, y: 80, on: true, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 4 },
+  { id: 'date', label: 'Date', group: 'misc', x: 94, y: 10, on: false, scale: 1, color: '#c9d4e8', boxed: true, boostCutoff: 2 },
+  { id: 'bossbar', label: 'Boss Bar', group: 'misc', x: 38, y: 8, on: false, scale: 1, color: '#c86aff', boxed: false, boostCutoff: 3 },
+  { id: 'sneak', label: 'Sneak Indicator', group: 'misc', x: 45, y: 94, on: false, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 2 },
+  { id: 'sprint', label: 'Sprint Indicator', group: 'misc', x: 52, y: 94, on: false, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 2 },
+  { id: 'tablist', label: 'Tab List', group: 'misc', x: 36, y: 16, on: false, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 2 },
+  { id: 'scoreboardhud', label: 'Scoreboard', group: 'misc', x: 80, y: 34, on: false, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 3 },
+  { id: 'chathud', label: 'Chat', group: 'misc', x: 2.5, y: 68, on: false, scale: 1, color: '#ffffff', boxed: true, boostCutoff: 3 },
+  { id: 'serverip', label: 'Server IP', group: 'misc', x: 88, y: 95, on: false, scale: 1, color: '#8b93a8', boxed: false, boostCutoff: 3 },
 ];
 
 /* --------------------------------------------------------------- demo data */
@@ -284,5 +458,20 @@ export function defaultSettings() {
     accountType: 'offline',
     msaClientId: '',
     selectedProfile: 'p-main',
+    /* video/audio — written into the game's options.txt at launch;
+       0 / -1 / 'leave' = don't touch what the player set in-game */
+    applyVideoSettings: true,
+    renderDistance: 0,
+    simulationDistance: 0,
+    guiScale: 'leave',
+    brightness: -1,
+    mouseSensitivity: -1,
+    masterVolume: -1,
+    particles: 'leave',
+    /* saved accounts & servers, client keybinds, module presets */
+    accounts: [],
+    servers: [],
+    keybinds: {},
+    modProfiles: {},
   };
 }

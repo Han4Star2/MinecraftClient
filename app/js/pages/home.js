@@ -5,7 +5,7 @@
 
 import { icon } from '../icons.js';
 import { t } from '../i18n.js';
-import { el, esc, toast, modal } from '../components.js';
+import { el, esc, toast, modal, fmtDuration } from '../components.js';
 import { state, selectedProfile, selectProfile } from '../state.js';
 import { mountPlayer } from '../player3d.js';
 import { launchProfile } from '../launch.js';
@@ -32,6 +32,7 @@ export function render(root) {
           </button>
           <button class="nr-launch-drop" title="Choose instance">${icon('chevD')}</button>
         </div>
+        <div class="row nr-chips" style="gap:8px;justify-content:center;margin-top:14px"></div>
       </div>
 
       <aside class="nr-news">
@@ -59,6 +60,17 @@ export function render(root) {
   });
   wrap.querySelector('.nr-launch-drop').addEventListener('click', () => pickInstance(applySub));
 
+  /* quick facts under the launch button: playtime, servers, what's new */
+  const chips = wrap.querySelector('.nr-chips');
+  const totalMs = state.profiles.reduce((sum, p) => sum + (p.totalPlayMs || 0), 0);
+  if (totalMs > 0) chips.appendChild(el(`<span class="chip" title="Total playtime across all instances">${icon('clock')}<span>${esc(fmtDuration(totalMs))}</span></span>`));
+  const sv = el(`<span class="chip" style="cursor:pointer" title="Servers — status, ping & quick join">${icon('globe')}<span>Servers</span></span>`);
+  sv.addEventListener('click', () => { location.hash = '#/servers'; });
+  chips.appendChild(sv);
+  const upd = el(`<span class="chip" style="cursor:pointer" title="What's new in ${esc(APP_VERSION)}">${icon('zap')}<span>v${esc(APP_VERSION)}</span></span>`);
+  upd.addEventListener('click', () => { location.hash = '#/news'; });
+  chips.appendChild(upd);
+
   /* news cards */
   const list = wrap.querySelector('.nr-news-list');
   for (const n of NEWS) {
@@ -74,7 +86,6 @@ export function render(root) {
   more.addEventListener('click', () => { location.hash = '#/news'; });
   list.appendChild(more);
 
-  void APP_VERSION;
   root.appendChild(wrap);
   return () => preview.destroy();
 }

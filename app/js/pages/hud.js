@@ -5,7 +5,7 @@ import { icon } from '../icons.js';
 import { t } from '../i18n.js';
 import { el, esc, toast, makeSwitch, makeSlider, settingRow, control } from '../components.js';
 import { hudElements, resetHud, save, hudElementEnabled, hudElementLocked, fpsBoostLevel } from '../state.js';
-import { FPS_BOOST_LEVELS } from '../catalog.js';
+import { FPS_BOOST_LEVELS, HUD_GROUPS } from '../catalog.js';
 
 let selectedId = null;
 
@@ -92,28 +92,33 @@ export function render(root) {
   const listBox = page.querySelector('.hud-list');
   function paintList() {
     listBox.innerHTML = '';
-    for (const e of els()) {
-      const locked = hudElementLocked(e);
-      const row = el(`
-        <div class="hud-list-row ${e.id === selectedId ? 'selected' : ''} ${locked ? 'locked' : ''}">
-          <span class="grow">${esc(e.label)}</span>
-          ${locked ? `<span class="lock-flag" title="Forced off by FPS Boost">${icon('alert')}</span>` : ''}
-        </div>`);
-      const sw = makeSwitch(e.on, (on) => {
-        e.on = on;
-        save('hud');
-        paintStage();
-      });
-      sw.disabled = locked;
-      row.appendChild(sw);
-      row.addEventListener('click', (ev) => {
-        if (ev.target.closest('.switch')) return;
-        selectedId = e.id;
-        paintStage();
-        paintList();
-        paintSelected();
-      });
-      listBox.appendChild(row);
+    for (const g of HUD_GROUPS) {
+      const inGroup = els().filter((e) => (e.group || 'misc') === g.id);
+      if (!inGroup.length) continue;
+      listBox.appendChild(el(`<div class="hud-group-label">${esc(g.label)}</div>`));
+      for (const e of inGroup) {
+        const locked = hudElementLocked(e);
+        const row = el(`
+          <div class="hud-list-row ${e.id === selectedId ? 'selected' : ''} ${locked ? 'locked' : ''}">
+            <span class="grow">${esc(e.label)}</span>
+            ${locked ? `<span class="lock-flag" title="Forced off by FPS Boost">${icon('alert')}</span>` : ''}
+          </div>`);
+        const sw = makeSwitch(e.on, (on) => {
+          e.on = on;
+          save('hud');
+          paintStage();
+        });
+        sw.disabled = locked;
+        row.appendChild(sw);
+        row.addEventListener('click', (ev) => {
+          if (ev.target.closest('.switch')) return;
+          selectedId = e.id;
+          paintStage();
+          paintList();
+          paintSelected();
+        });
+        listBox.appendChild(row);
+      }
     }
   }
 
@@ -238,6 +243,22 @@ function contentFor(e) {
         <span>⚡ Speed II <b>1:24</b></span>
         <span>💪 Strength <b>0:45</b></span>
       </div>`;
+    case 'fpsgraph':
+      return `<div class="hud-graph">${Array.from({ length: 24 }, (_, i) =>
+        `<i style="height:${40 + Math.round(Math.sin(i / 2.4) * 22 + Math.random() * 14)}%"></i>`).join('')}</div>`;
+    case 'xpbar':
+      return `<div class="hud-xpbar"><i style="width:64%"></i></div>`;
+    case 'bossbar':
+      return `<div style="font-size:10px;text-align:center">Ender Dragon<div class="hud-xpbar boss"><i style="width:82%"></i></div></div>`;
+    case 'tablist':
+      return `<div class="hud-tablist"><b>play.example.net</b>${['BREND4N 12ms', 'Gemsip 23ms', 'You 21ms', 'Nexo_ 48ms'].map((p) => `<span>${p}</span>`).join('')}</div>`;
+    case 'scoreboardhud':
+      return `<div class="hud-tablist"><b>BEDWARS</b>${['Red ✔', 'Blue ✔', 'Green ✖', 'Kills: 7'].map((p) => `<span>${p}</span>`).join('')}</div>`;
+    case 'chathud':
+      return `<div class="hud-tablist chat"><span>&lt;Gemsip&gt; gg</span><span>&lt;BREND4N&gt; nice hit</span><span class="dyn">&lt;You&gt; thanks!</span></div>`;
+    case 'clickhistory':
+      return `<div class="hud-graph clicks">${Array.from({ length: 14 }, () =>
+        `<i style="height:${20 + Math.round(Math.random() * 70)}%"></i>`).join('')}</div>`;
     default:
       return `<span class="dyn">${esc(staticText(e))}</span>`;
   }
@@ -250,14 +271,34 @@ function staticText(e) {
 function dynamicText(e, tick) {
   switch (e.id) {
     case 'fps': return `${236 + Math.round(Math.sin(tick / 3) * 14)} FPS`;
+    case 'avgfps': return `avg ${228 + (tick % 3)} FPS`;
+    case 'tps': return `20.0 TPS`;
+    case 'ram': return `RAM ${(2.1 + (tick % 5) / 10).toFixed(1)} / 4.0 GB`;
+    case 'cpu': return `CPU ${18 + (tick % 7)}%`;
     case 'cps': return `${6 + (tick % 5)} | ${4 + (tick % 3)} CPS`;
     case 'ping': return `${23 + (tick % 4)} ms`;
+    case 'hits': return `${12 + (tick % 9)} hits`;
     case 'coords': return `X: -128  Y: 64  Z: ${512 + tick % 9}`;
+    case 'height': return `Y: ${64 + (tick % 3)}`;
+    case 'chunk': return `chunk -8 / ${32 + (tick % 2)}`;
+    case 'biome': return 'Cherry Grove';
     case 'clock': return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    case 'date': return new Date().toLocaleDateString();
+    case 'playtime': return `${1 + Math.floor(tick / 90)}h ${12 + (tick % 48)}m`;
+    case 'weather': return tick % 20 < 14 ? '☀ Clear' : '🌧 Rain';
+    case 'moon': return '🌕 Full Moon';
     case 'direction': return 'S (180°)';
     case 'speed': return `${(5.6 + Math.sin(tick / 2)).toFixed(1)} m/s`;
     case 'combo': return `${3 + (tick % 4)} COMBO`;
     case 'reach': return `${(2.4 + (tick % 6) / 10).toFixed(2)} blocks`;
+    case 'itemdur': return `⛏ ${1561 - (tick % 40)} / 1561`;
+    case 'hunger': return `🍗 ${18 - (tick % 3)} / 20`;
+    case 'health': return `❤ ${18 + (tick % 3)} / 20`;
+    case 'level': return `Lv ${30 + (tick % 2)}`;
+    case 'totems': return `🛡 ${3 - (tick % 2)} totems`;
+    case 'sneak': return tick % 6 < 3 ? 'SNEAKING' : '—';
+    case 'sprint': return tick % 4 < 3 ? 'SPRINTING' : '—';
+    case 'serverip': return 'play.example.net';
     default: return null;
   }
 }

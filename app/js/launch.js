@@ -34,7 +34,7 @@ export function launchProfile(profile, opts = {}) {
   openDock(profile, opts);
 
   if (isConnected()) {
-    api.post('api/launch', { profileId: profile.id, server: opts.server || null })
+    api.post('api/launch', { profileId: profile.id, server: opts.server || null, dryRun: !!opts.dryRun })
       .catch((e) => {
         handleEvent({ type: 'launch', phase: 'failed', detail: e.message });
         handleEvent({ type: 'log', line: `[Horus] ${e.message}`, stream: 'err' });

@@ -21,6 +21,7 @@ export const DEFAULT_SETTINGS = {
   threads: 0,
   fpsCap: 0,
   vsync: false,
+  fpsBoost: 'off',
   resolution: 'auto',
   fullscreen: false,
   javaPath: '',
@@ -38,6 +39,20 @@ export const DEFAULT_SETTINGS = {
   accountType: 'offline',
   msaClientId: '',
   selectedProfile: 'p-main',
+  /* video/audio → options.txt at launch (0 / -1 / 'leave' = don't touch) */
+  applyVideoSettings: true,
+  renderDistance: 0,
+  simulationDistance: 0,
+  guiScale: 'leave',
+  brightness: -1,
+  mouseSensitivity: -1,
+  masterVolume: -1,
+  particles: 'leave',
+  /* saved accounts & servers, client keybinds, module presets */
+  accounts: [],
+  servers: [],
+  keybinds: {},
+  modProfiles: {},
 };
 
 const DEFAULT_PROFILES = [

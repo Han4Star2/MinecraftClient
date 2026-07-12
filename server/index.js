@@ -118,13 +118,12 @@ async function main() {
     console.log('');
     if (args.open && !process.env.CI && !process.env.HORUS_NO_OPEN) {
       try {
-        if (process.platform === 'win32') {
+        const child = process.platform === 'win32'
           // Prefer a chromeless app window (Edge ships with Windows 10/11).
-          spawn('cmd', ['/c', `start "" msedge --app=${addr} || start "" ${addr}`], { detached: true, stdio: 'ignore', shell: false }).unref();
-        } else {
-          const cmd = process.platform === 'darwin' ? 'open' : 'xdg-open';
-          spawn(cmd, [addr], { detached: true, stdio: 'ignore' }).unref();
-        }
+          ? spawn('cmd', ['/c', `start "" msedge --app=${addr} || start "" ${addr}`], { detached: true, stdio: 'ignore', shell: false })
+          : spawn(process.platform === 'darwin' ? 'open' : 'xdg-open', [addr], { detached: true, stdio: 'ignore' });
+        child.on('error', () => {}); // async spawn failure must not kill the server
+        child.unref();
       } catch { /* headless */ }
     }
   });

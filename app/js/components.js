@@ -82,6 +82,23 @@ export function confirmModal(title, message, confirmLabel = 'Confirm') {
   });
 }
 
+/** Single-text-input modal (window.prompt is unreliable in webviews).
+    Resolves the trimmed value, or null on cancel/empty. */
+export function inputModal(title, { label = '', placeholder = '', value = '', okLabel = 'OK' } = {}) {
+  return new Promise((resolve) => {
+    const body = el(`<div class="field">${label ? `<label>${esc(label)}</label>` : ''}<input class="input" value="${esc(value)}" placeholder="${esc(placeholder)}" spellcheck="false"></div>`);
+    const input = body.querySelector('input');
+    const ok = el(`<button class="btn primary">${esc(okLabel)}</button>`);
+    const no = el('<button class="btn ghost">Cancel</button>');
+    const m = modal({ title, body, footer: [no, ok], size: 'sm', onClose: () => resolve(null) });
+    const submit = () => { resolve(input.value.trim() || null); m.close(); };
+    ok.addEventListener('click', submit);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+    no.addEventListener('click', () => m.close());
+    setTimeout(() => input.focus(), 30);
+  });
+}
+
 /* ------------------------------------------------------------ context menu */
 
 export function contextMenu(x, y, items) {

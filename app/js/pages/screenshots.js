@@ -1,10 +1,14 @@
-/* Screenshots — gallery of the screenshots folder (real files when the
-   backend is connected; generated demo shots otherwise) with a lightbox. */
+/* Screenshots & Replay — gallery of the screenshots folder (real files when
+   the backend is connected; generated demo shots otherwise) with a lightbox,
+   plus the Replay corner: recording, camera paths & slow motion via the
+   Replay Mod, installable with one click. */
 
 import { icon } from '../icons.js';
 import { t } from '../i18n.js';
 import { el, esc, toast, modal } from '../components.js';
 import { api, isConnected } from '../api.js';
+import { selectedProfile, modEnabled, setModEnabled } from '../state.js';
+import { MODS } from '../catalog.js';
 
 export function render(root) {
   const page = el(`
@@ -16,8 +20,45 @@ export function render(root) {
         </div>
         <button class="btn ghost b-folder">${icon('folder')}<span>${esc(t('shots.openFolder'))}</span></button>
       </div>
+      <div class="card pad row wrap replay-card" style="margin-bottom:18px;gap:14px">
+        <span style="font-size:22px;line-height:0;flex:none;color:var(--accent-2)">${icon('camera')}</span>
+        <div class="small grow" style="min-width:240px">
+          <b>Replay & recording</b><div class="muted" style="margin-top:2px">Record sessions, fly the camera free, build camera paths and export in slow motion —
+          via the open-source <b>Replay Mod</b>. The Replay module (Mods page) adds the client UI around it.</div>
+        </div>
+        <div class="row" style="gap:8px">
+          <button class="btn small dark b-replay-mod">${icon('download')}<span>Install Replay Mod</span></button>
+          <button class="btn small dark b-replay-module"></button>
+        </div>
+      </div>
       <div class="shot-grid"></div>
     </div>`);
+
+  const replayMod = MODS.find((m) => m.id === 'replay');
+  const moduleBtn = page.querySelector('.b-replay-module');
+  const paintModuleBtn = () => {
+    moduleBtn.innerHTML = `${icon(modEnabled(replayMod) ? 'check' : 'plus')}<span>Module ${modEnabled(replayMod) ? 'on' : 'off'}</span>`;
+  };
+  paintModuleBtn();
+  moduleBtn.addEventListener('click', () => {
+    setModEnabled(replayMod, !modEnabled(replayMod));
+    paintModuleBtn();
+  });
+
+  page.querySelector('.b-replay-mod').addEventListener('click', async (e) => {
+    const p = selectedProfile();
+    if (!isConnected() || !p) { toast(t('common.demo'), 'info'); return; }
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    try {
+      const res = await api.post('api/modrinth/install', { projectId: 'replaymod', profileId: p.id });
+      toast(`Replay Mod ${res.version} installed to ${p.name}`, 'ok');
+      btn.innerHTML = `${icon('check')}<span>Installed</span>`;
+    } catch (err) {
+      toast(`Replay Mod: ${err.message}`, 'err');
+      btn.disabled = false;
+    }
+  });
 
   const grid = page.querySelector('.shot-grid');
 

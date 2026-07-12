@@ -12,8 +12,9 @@ import { resolveVersion, assetsBase, mavenToPath } from './meta.js';
 import { pickJava } from './java.js';
 import { extractZip } from './zip.js';
 import { dirs, getSettings, profileGameDir, touchProfile, getProfile } from './store.js';
-import { ensureDir, exists, mojangOs, mojangArch, offlineUuid, readJson, writeJson } from './util.js';
+import { ensureDir, exists, mojangOs, mojangArch, offlineUuid, readJson, writeJson, writeFileAtomic } from './util.js';
 import { getMsaSession } from './msa.js';
+import { patchOptions, videoEntriesFromSettings } from './options.js';
 
 let active = null; // { profileId, child, abort, startedAt, phase }
 
@@ -340,6 +341,20 @@ async function runPipeline({ profile, server, dryRun, abort }) {
   await ensureDir(gameDir);
   await ensureDir(path.join(gameDir, 'mods'));
 
+  /* video/audio settings → options.txt (only keys the user set; "leave"
+     sentinels never touch what was configured in-game) */
+  if (settings.applyVideoSettings !== false) {
+    try {
+      const entries = videoEntriesFromSettings(settings);
+      if (Object.keys(entries).length) {
+        await patchOptions(gameDir, entries);
+        bus.log(`[Horus] Applied ${Object.keys(entries).length} video/audio settings to options.txt`);
+      }
+    } catch (e) {
+      bus.log(`[Horus] Could not patch options.txt: ${e.message}`, 'err');
+    }
+  }
+
   const command = buildCommand({
     json,
     profile,
@@ -388,6 +403,18 @@ async function runPipeline({ profile, server, dryRun, abort }) {
   child.on('exit', async (code) => {
     bus.emit({ type: 'exit', code: code ?? 0 });
     bus.log(`[Horus] Game exited with code ${code ?? 0}`);
+    if (code) {
+      // Non-zero exit = crash: dump the session log next to the game files.
+      try {
+        const crashDir = path.join(dirs().data, 'crash-reports');
+        await ensureDir(crashDir);
+        const file = path.join(crashDir, `crash-${new Date().toISOString().replace(/[:.]/g, '-')}.log`);
+        const lines = bus.recentLogs(600).map((l) => `[${new Date(l.t).toISOString()}] ${l.line}`);
+        await writeFileAtomic(file, `Horus crash report — exit code ${code}\nprofile: ${profile.id} (${profile.version} ${profile.loader})\n\n${lines.join('\n')}\n`);
+        bus.emit({ type: 'crash', code, file });
+        bus.log(`[Horus] Crash report saved: ${file}`, 'err');
+      } catch { /* the log stream itself already has everything */ }
+    }
     const wasActive = active;
     active = null;
     if (wasActive) {

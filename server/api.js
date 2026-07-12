@@ -12,7 +12,9 @@ import { detectJavas } from './java.js';
 import { getManifest } from './meta.js';
 import { startLaunch, cancelLaunch, killGame, launchState } from './launcher.js';
 import { listMods, toggleMod, deleteMod, modsDir } from './mods.js';
-import { searchMods, installMod } from './modrinth.js';
+import { listFolder, toggleFolderItem, deleteFolderItem, contentDir } from './folders.js';
+import { setPackOrder } from './options.js';
+import { searchMods, installMod, checkJarUpdates, applyJarUpdates } from './modrinth.js';
 import { startMsa, msaStatus, signOut } from './msa.js';
 import { pingServer } from './ping.js';
 import { cfSearch, cfInstall } from './curseforge.js';
@@ -25,7 +27,11 @@ function openInFileManager(dir) {
   const cmd = process.platform === 'win32' ? 'explorer'
     : process.platform === 'darwin' ? 'open' : 'xdg-open';
   try {
-    spawn(cmd, [dir], { detached: true, stdio: 'ignore' }).unref();
+    const child = spawn(cmd, [dir], { detached: true, stdio: 'ignore' });
+    // spawn failures (no xdg-open on headless boxes) arrive as an async
+    // 'error' event — unhandled it would crash the whole server process.
+    child.on('error', () => {});
+    child.unref();
   } catch { /* headless — the path in the response is still useful */ }
 }
 
@@ -97,7 +103,10 @@ export async function handleApi(req, res, url) {
     if (m && method === 'POST') {
       const profile = store.getProfile(decodeURIComponent(m[1]));
       if (!profile) { sendJson(res, 404, { error: 'unknown profile' }); return true; }
-      const dir = store.profileGameDir(profile);
+      const sub = url.searchParams.get('sub') || '';
+      const dir = ['mods', 'shaderpacks', 'resourcepacks', 'saves', 'screenshots'].includes(sub)
+        ? path.join(store.profileGameDir(profile), sub)
+        : store.profileGameDir(profile);
       await ensureDir(dir);
       openInFileManager(dir);
       sendJson(res, 200, { path: dir });
@@ -142,20 +151,69 @@ export async function handleApi(req, res, url) {
       return true;
     }
 
+    /* ------------------------------------------- shader / resource packs */
+    m = pathname.match(/^\/api\/profiles\/([^/]+)\/folder\/(shaderpacks|resourcepacks)$/);
+    if (m && method === 'GET') {
+      const profile = store.getProfile(decodeURIComponent(m[1]));
+      if (!profile) { sendJson(res, 404, { error: 'unknown profile' }); return true; }
+      sendJson(res, 200, await listFolder(profile, m[2]));
+      return true;
+    }
+    m = pathname.match(/^\/api\/profiles\/([^/]+)\/folder\/(shaderpacks|resourcepacks)\/(toggle|delete)$/);
+    if (m && method === 'POST') {
+      const profile = store.getProfile(decodeURIComponent(m[1]));
+      if (!profile) { sendJson(res, 404, { error: 'unknown profile' }); return true; }
+      const { file } = await readJsonBody(req);
+      if (typeof file !== 'string' || !file) { sendJson(res, 400, { error: 'missing file' }); return true; }
+      sendJson(res, 200, m[3] === 'toggle'
+        ? await toggleFolderItem(profile, m[2], file)
+        : await deleteFolderItem(profile, m[2], file));
+      return true;
+    }
+    m = pathname.match(/^\/api\/profiles\/([^/]+)\/packorder$/);
+    if (m && method === 'PUT') {
+      const profile = store.getProfile(decodeURIComponent(m[1]));
+      if (!profile) { sendJson(res, 404, { error: 'unknown profile' }); return true; }
+      const { order } = await readJsonBody(req);
+      if (!Array.isArray(order)) { sendJson(res, 400, { error: 'order must be an array' }); return true; }
+      await ensureDir(contentDir(profile, 'resourcepacks'));
+      await setPackOrder(store.profileGameDir(profile), order.map(String));
+      sendJson(res, 200, { order });
+      return true;
+    }
+
+    /* ---------------------------------------------------------- mod updates */
+    m = pathname.match(/^\/api\/profiles\/([^/]+)\/mod-updates$/);
+    if (m && method === 'GET') {
+      const profile = store.getProfile(decodeURIComponent(m[1]));
+      if (!profile) { sendJson(res, 404, { error: 'unknown profile' }); return true; }
+      sendJson(res, 200, { updates: await checkJarUpdates(profile) });
+      return true;
+    }
+    m = pathname.match(/^\/api\/profiles\/([^/]+)\/mod-updates\/apply$/);
+    if (m && method === 'POST') {
+      const profile = store.getProfile(decodeURIComponent(m[1]));
+      if (!profile) { sendJson(res, 404, { error: 'unknown profile' }); return true; }
+      const updates = await checkJarUpdates(profile);
+      sendJson(res, 200, { applied: await applyJarUpdates(profile, updates) });
+      return true;
+    }
+
     /* ----------------------------------------------------------- modrinth */
     if (method === 'GET' && pathname === '/api/modrinth/search') {
       sendJson(res, 200, await searchMods({
         query: url.searchParams.get('q') || '',
         version: url.searchParams.get('version') || '',
         loader: url.searchParams.get('loader') || '',
+        type: url.searchParams.get('type') || 'mod',
       }));
       return true;
     }
     if (method === 'POST' && pathname === '/api/modrinth/install') {
-      const { projectId, profileId } = await readJsonBody(req);
+      const { projectId, profileId, type } = await readJsonBody(req);
       const profile = store.getProfile(profileId);
       if (!profile) { sendJson(res, 404, { error: 'unknown profile' }); return true; }
-      sendJson(res, 200, await installMod({ projectId, profile }));
+      sendJson(res, 200, await installMod({ projectId, profile, type: type || 'mod' }));
       return true;
     }
 
@@ -255,6 +313,12 @@ export async function handleApi(req, res, url) {
     /* -------------------------------------------------------------- events */
     if (method === 'GET' && pathname === '/api/events') {
       events.addClient(req, res);
+      return true;
+    }
+
+    /* ---------------------------------------------------------------- logs */
+    if (method === 'GET' && pathname === '/api/logs') {
+      sendJson(res, 200, { logs: events.recentLogs(Number(url.searchParams.get('n')) || 400) });
       return true;
     }
 

@@ -3,16 +3,18 @@
 
 import { icon } from '../icons.js';
 import { t, languages } from '../i18n.js';
-import { el, esc, toast, settingRow, control, makeSlider, makeSwitch } from '../components.js';
-import { state, save } from '../state.js';
+import { el, esc, toast, modal, inputModal, settingRow, control, makeSlider, makeSwitch } from '../components.js';
+import { state, save, accounts, addAccount, switchAccount, removeAccount, selectedProfile } from '../state.js';
 import { api, isConnected, serverStatus } from '../api.js';
 import { APP_VERSION } from '../version.js';
-import { FPS_BOOST_LEVELS } from '../catalog.js';
+import { FPS_BOOST_LEVELS, KEYBIND_ACTIONS } from '../catalog.js';
+import { launchProfile } from '../launch.js';
 
 const CATS = [
   { id: 'general', label: 'set.general', icon: 'settings' },
   { id: 'performance', label: 'set.performance', icon: 'zap' },
   { id: 'minecraft', label: 'set.minecraft', icon: 'box' },
+  { id: 'keybinds', label: 'set.keybinds', icon: 'keyboard' },
   { id: 'network', label: 'set.network', icon: 'wifi' },
   { id: 'account', label: 'set.account', icon: 'user' },
   { id: 'about', label: 'set.about', icon: 'info' },
@@ -60,6 +62,7 @@ export function render(root) {
     if (cat === 'general') paintGeneral();
     if (cat === 'performance') paintPerformance();
     if (cat === 'minecraft') paintMinecraft();
+    if (cat === 'keybinds') paintKeybinds();
     if (cat === 'network') paintNetwork();
     if (cat === 'account') paintAccount();
     if (cat === 'about') paintAbout();
@@ -126,9 +129,21 @@ export function render(root) {
       control({ t: 'select', opts: ['G1', 'ZGC', 'Shenandoah', 'Parallel'] }, s.gc, (v) => { s.gc = v; save('settings'); })));
     g.appendChild(settingRow('Worker threads', '0 = automatic',
       control({ t: 'slider', min: 0, max: 16, def: 0 }, s.threads, (v) => { s.threads = v; save('settings'); })));
-    g.appendChild(settingRow('FPS cap', '0 = unlimited',
+    g.appendChild(settingRow('FPS cap', '0 = unlimited — written to options.txt as maxFps',
       control({ t: 'slider', min: 0, max: 480, def: 0 }, s.fpsCap, (v) => { s.fpsCap = v; save('settings'); })));
     g.appendChild(settingRow('VSync', null, makeSwitch(s.vsync, (v) => { s.vsync = v; save('settings'); })));
+    g.appendChild(settingRow('Particles', 'Fewer particles = more FPS in fights and farms',
+      control({ t: 'select', opts: ['leave', 'all', 'decreased', 'minimal'] }, s.particles || 'leave', (v) => { s.particles = v; save('settings'); })));
+
+    const preset = settingRow('Low-end PC preset', 'One click: FPS Boost High, minimal particles, 2 GB RAM, FPS cap 60, VSync off',
+      el(`<button class="btn small dark">${icon('zap')}<span>Apply preset</span></button>`));
+    preset.querySelector('button').addEventListener('click', () => {
+      Object.assign(s, { fpsBoost: 'high', particles: 'minimal', defaultRamMb: 2048, fpsCap: 60, vsync: false, animations: false });
+      save('settings');
+      paint();
+      toast('Low-end preset applied — everything can be changed back individually', 'ok');
+    });
+    g.appendChild(preset);
 
     const g2 = group('Launcher footprint');
     g2.appendChild(el(`<div class="setting-row"><div class="s-label"><div class="name">Why Horus stays light</div><div class="desc">No Electron, no bundled browser: the backend is a dependency-free Node process (~35 MB RSS) and this UI runs in the browser/webview you already have. Turn off animations above to go even lower.</div></div><span class="badge free">~35 MB</span></div>`));
@@ -146,6 +161,38 @@ export function render(root) {
     g.appendChild(settingRow('Fullscreen', null, makeSwitch(s.fullscreen, (v) => { s.fullscreen = v; save('settings'); })));
     g.appendChild(settingRow('Shared game directory', 'Empty = isolated per-profile directories (recommended). Point it at your existing .minecraft to reuse it — Horus speaks the vanilla format.',
       control({ t: 'text' }, s.gameDir, (v) => { s.gameDir = v; save('settings'); })));
+
+    const gv = group('Video & audio — applied to the game');
+    gv.appendChild(settingRow('Apply on launch', 'Writes the values below into the instance\'s real options.txt right before the game starts. "Leave" values never touch what you set in-game.',
+      makeSwitch(s.applyVideoSettings !== false, (v) => { s.applyVideoSettings = v; save('settings'); })));
+    gv.appendChild(settingRow('Render distance', '0 = leave as set in-game',
+      makeSlider({ min: 0, max: 32, value: s.renderDistance || 0, format: (v) => (v ? `${v} chunks` : 'leave') }, (v) => { s.renderDistance = v; save('settings'); })));
+    gv.appendChild(settingRow('Simulation distance', '0 = leave as set in-game',
+      makeSlider({ min: 0, max: 32, value: s.simulationDistance || 0, format: (v) => (v ? `${v} chunks` : 'leave') }, (v) => { s.simulationDistance = v; save('settings'); })));
+    gv.appendChild(settingRow('GUI scale', null,
+      control({ t: 'select', opts: ['leave', 'auto', '1', '2', '3', '4'] }, s.guiScale || 'leave', (v) => { s.guiScale = v; save('settings'); })));
+    gv.appendChild(settingRow('Brightness', '-1 = leave; 100 % = bright (in-game maximum, not the Fullbright module)',
+      makeSlider({ min: -1, max: 100, value: s.brightness ?? -1, format: (v) => (v < 0 ? 'leave' : `${v}%`) }, (v) => { s.brightness = v; save('settings'); })));
+    gv.appendChild(settingRow('Mouse sensitivity', '-1 = leave',
+      makeSlider({ min: -1, max: 100, value: s.mouseSensitivity ?? -1, format: (v) => (v < 0 ? 'leave' : `${v}%`) }, (v) => { s.mouseSensitivity = v; save('settings'); })));
+    gv.appendChild(settingRow('Master volume', '-1 = leave',
+      makeSlider({ min: -1, max: 100, value: s.masterVolume ?? -1, format: (v) => (v < 0 ? 'leave' : `${v}%`) }, (v) => { s.masterVolume = v; save('settings'); })));
+  }
+
+  /* --------------------------------------------------------------- keybinds */
+  function paintKeybinds() {
+    const g = group('Client shortcuts');
+    if (!s.keybinds || typeof s.keybinds !== 'object') s.keybinds = {};
+    for (const a of KEYBIND_ACTIONS) {
+      g.appendChild(settingRow(a.label, null,
+        control({ t: 'keybind' }, s.keybinds[a.id] || a.def, (v) => { s.keybinds[a.id] = v; save('settings'); })));
+    }
+    const reset = el(`<div class="setting-row"><div class="s-label"><div class="name">Reset all shortcuts</div><div class="desc">Back to the defaults shown above</div></div><div class="s-ctrl"></div></div>`);
+    const btn = el(`<button class="btn small ghost">${icon('refresh')}<span>Reset</span></button>`);
+    btn.addEventListener('click', () => { s.keybinds = {}; save('settings'); paint(); toast('Shortcuts reset'); });
+    reset.querySelector('.s-ctrl').appendChild(btn);
+    g.appendChild(reset);
+    main.appendChild(el(`<div class="tiny faint" style="padding:0 4px">Per-module keys (zoom factor, macros …) live in each module's config on the Mods page. Minecraft's own controls stay in the game's Controls screen.</div>`));
   }
 
   /* ---------------------------------------------------------------- network */
@@ -184,6 +231,40 @@ export function render(root) {
 
   /* ---------------------------------------------------------------- account */
   function paintAccount() {
+    const ga = group('Saved accounts');
+    const list = accounts();
+    for (const acc of list) {
+      const active = acc.name === s.accountName;
+      const row = el(`
+        <div class="setting-row">
+          <div class="s-label">
+            <div class="name">${esc(acc.name)} ${active ? '<span class="badge red">active</span>' : ''}</div>
+            <div class="desc">${acc.type === 'msa' ? 'Microsoft account' : 'Offline session'} — skin follows the account name</div>
+          </div>
+          <div class="s-ctrl" style="gap:6px"></div>
+        </div>`);
+      const ctrl = row.querySelector('.s-ctrl');
+      if (!active) {
+        const use = el(`<button class="btn small dark">${icon('check')}<span>Switch</span></button>`);
+        use.addEventListener('click', () => { switchAccount(acc.id); paint(); toast(`Playing as ${acc.name}`); });
+        ctrl.appendChild(use);
+        const del = el(`<button class="icon-btn small" title="Remove">${icon('trash')}</button>`);
+        del.addEventListener('click', () => { removeAccount(acc.id); paint(); });
+        ctrl.appendChild(del);
+      }
+      ga.appendChild(row);
+    }
+    const addRow = el(`<div class="setting-row"><div class="s-label"><div class="name">Add account</div><div class="desc">Offline accounts need just a name; Microsoft accounts sign in below</div></div><div class="s-ctrl"></div></div>`);
+    const addBtn = el(`<button class="btn small primary">${icon('plus')}<span>Add offline account</span></button>`);
+    addBtn.addEventListener('click', async () => {
+      const name = await inputModal('Add offline account', { label: 'Player name', placeholder: 'Steve', okLabel: 'Add' });
+      if (!name) return;
+      if (addAccount(name, 'offline')) { paint(); toast(`${name} added`); }
+      else toast('That account already exists', 'err');
+    });
+    addRow.querySelector('.s-ctrl').appendChild(addBtn);
+    ga.appendChild(addRow);
+
     const g = group(t('set.account'));
     g.appendChild(settingRow('Player name', 'Used for offline sessions and the UI',
       control({ t: 'text' }, s.accountName, (v) => { s.accountName = v.trim() || 'Player'; save('settings'); })));
@@ -210,6 +291,7 @@ export function render(root) {
               if (st.state === 'done') {
                 clearInterval(poll);
                 s.accountName = st.name || s.accountName;
+                if (st.name) addAccount(st.name, 'msa');
                 save('settings');
                 toast(`Signed in as ${st.name}`, 'ok');
                 paint();
@@ -263,6 +345,32 @@ export function render(root) {
         <div class="card fix-row">${icon('check')}<div><div class="fx-weak">${esc(weak)}</div><div class="fx-fix">${esc(fix)}</div></div></div>`));
     }
     main.appendChild(g);
+
+    const gm = group('Maintenance');
+    const logsRow = settingRow('Session logs', 'Launcher + game output of this session; crashes are saved to crash-reports/ automatically',
+      el(`<button class="btn small ghost">${icon('terminal')}<span>View logs</span></button>`));
+    logsRow.querySelector('button').addEventListener('click', async () => {
+      if (!isConnected()) { toast(t('common.demo'), 'info'); return; }
+      try {
+        const { logs } = await api.get('api/logs');
+        const body = el(`<div class="console" style="max-height:420px;display:block">${logs.length
+          ? logs.map((l) => `<div class="${l.stream === 'err' ? 'ln-err' : ''}">${esc(`[${new Date(l.t).toLocaleTimeString()}] ${l.line}`)}</div>`).join('')
+          : '<div class="muted">Nothing logged yet this session — launch something first.</div>'}</div>`);
+        modal({ title: `Session logs (${logs.length} lines)`, body, size: 'lg' });
+      } catch (e) { toast(e.message, 'err'); }
+    });
+    gm.appendChild(logsRow);
+
+    const repairRow = settingRow('Verify & repair game files', 'Re-checks every file of the active instance against its SHA-1 and re-downloads anything broken — without starting the game',
+      el(`<button class="btn small ghost">${icon('shield')}<span>Repair active instance</span></button>`));
+    repairRow.querySelector('button').addEventListener('click', () => {
+      const p = selectedProfile();
+      if (!p) { toast('No instance selected', 'err'); return; }
+      if (!isConnected()) { toast(t('common.demo'), 'info'); return; }
+      toast(`Verifying ${p.name} — watch the progress dock`, 'info');
+      launchProfile(p, { dryRun: true });
+    });
+    gm.appendChild(repairRow);
 
     main.appendChild(el(`
       <div class="settings-group"><h3>Stack</h3>

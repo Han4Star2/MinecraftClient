@@ -4,6 +4,8 @@
 const clients = new Set();
 const backlog = []; // last N events so a UI that connects mid-launch catches up
 const BACKLOG_MAX = 120;
+const logbuf = []; // rolling session log — served by /api/logs, dumped on crash
+const LOGBUF_MAX = 600;
 
 export function addClient(req, res) {
   res.writeHead(200, {
@@ -34,7 +36,13 @@ export function emit(evt) {
 }
 
 export function log(line, stream = 'out') {
+  logbuf.push({ t: Date.now(), line, stream });
+  if (logbuf.length > LOGBUF_MAX) logbuf.shift();
   emit({ type: 'log', line, stream });
+}
+
+export function recentLogs(n = 400) {
+  return logbuf.slice(-n);
 }
 
 export function clearBacklog() {

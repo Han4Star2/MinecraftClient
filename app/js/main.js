@@ -18,6 +18,7 @@ import * as shop from './pages/shop.js';
 import * as cosmetics from './pages/cosmetics.js';
 import * as minigames from './pages/minigames.js';
 import * as social from './pages/social.js';
+import * as servers from './pages/servers.js';
 import * as worlds from './pages/worlds.js';
 import * as screenshots from './pages/screenshots.js';
 import * as settings from './pages/settings.js';
@@ -30,6 +31,7 @@ const routes = {
   home: { mod: home, icon: 'play', label: 'nav.home' },
   library: { mod: library, icon: 'idcard', label: 'nav.library' },
   discover: { mod: discover, icon: 'grid', label: 'nav.content' },
+  servers: { mod: servers, icon: 'globe', label: 'nav.servers' },
   cosmetics: { mod: cosmetics, icon: 'face', label: 'nav.cosmetics' },
   social: { mod: social, icon: 'headset', label: 'nav.social' },
   settings: { mod: settings, icon: 'settings', label: 'nav.settings' },
@@ -45,7 +47,7 @@ const routes = {
   minigames: { mod: minigames, icon: 'gamepad', label: 'nav.minigames', off: true },
 };
 
-const RAIL = ['home', 'library', 'discover', 'cosmetics', 'social', null, 'ingame', 'settings'];
+const RAIL = ['home', 'library', 'discover', 'servers', 'cosmetics', 'social', null, 'ingame', 'settings'];
 
 let current = null;
 let cleanup = null;

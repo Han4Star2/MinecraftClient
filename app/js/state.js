@@ -190,7 +190,21 @@ export function enabledModCount() {
 /* --------------------------------------------------------------------- hud */
 
 export function hudElements() {
-  if (!state.hud) state.hud = HUD_DEFAULTS.map((e) => ({ ...e }));
+  if (!state.hud) {
+    state.hud = HUD_DEFAULTS.map((e) => ({ ...e }));
+    return state.hud;
+  }
+  // Migrate saved layouts: adopt newly added elements, refresh metadata
+  // (group/label/boost threshold) while keeping the user's position & style.
+  for (const def of HUD_DEFAULTS) {
+    const cur = state.hud.find((e) => e.id === def.id);
+    if (!cur) state.hud.push({ ...def });
+    else {
+      cur.group = def.group;
+      cur.label = def.label;
+      cur.boostCutoff = def.boostCutoff;
+    }
+  }
   return state.hud;
 }
 
@@ -212,4 +226,98 @@ export function hudElementLocked(e) {
 export function equipCosmetic(cat, idOrNull) {
   state.cosmetics[cat] = idOrNull;
   save('cosmetics');
+}
+
+/* ----------------------------------------------------------------- servers */
+
+export function myServers() {
+  if (!Array.isArray(state.settings.servers)) state.settings.servers = [];
+  return state.settings.servers;
+}
+
+export function addServer({ name, addr }) {
+  const list = myServers();
+  const id = `sv-${Date.now().toString(36)}`;
+  list.push({ id, name: name || addr, addr, fav: false });
+  save('servers');
+  return list[list.length - 1];
+}
+
+export function removeServer(id) {
+  state.settings.servers = myServers().filter((s) => s.id !== id);
+  save('servers');
+}
+
+export function toggleServerFav(id) {
+  const s = myServers().find((x) => x.id === id);
+  if (s) { s.fav = !s.fav; save('servers'); }
+}
+
+/* ---------------------------------------------------------------- accounts */
+/* Saved account list. The active account is what settings.accountName /
+   accountType already were — switching just swaps those two fields, so the
+   whole launch pipeline keeps working unchanged. */
+
+export function accounts() {
+  if (!Array.isArray(state.settings.accounts)) state.settings.accounts = [];
+  const list = state.settings.accounts;
+  if (!list.some((a) => a.name === state.settings.accountName)) {
+    list.unshift({ id: `acc-${Date.now().toString(36)}`, name: state.settings.accountName || 'Player', type: state.settings.accountType || 'offline' });
+  }
+  return list;
+}
+
+export function addAccount(name, type = 'offline') {
+  const list = accounts();
+  if (list.some((a) => a.name === name && a.type === type)) return null;
+  const acc = { id: `acc-${Date.now().toString(36)}`, name, type };
+  list.push(acc);
+  save('accounts');
+  return acc;
+}
+
+export function switchAccount(id) {
+  const acc = accounts().find((a) => a.id === id);
+  if (!acc) return;
+  state.settings.accountName = acc.name;
+  state.settings.accountType = acc.type;
+  save('settings');
+}
+
+export function removeAccount(id) {
+  const list = accounts();
+  const acc = list.find((a) => a.id === id);
+  if (!acc || acc.name === state.settings.accountName) return; // never remove the active one
+  state.settings.accounts = list.filter((a) => a.id !== id);
+  save('accounts');
+}
+
+/* ------------------------------------------------------------- mod presets */
+/* Named snapshots of the whole module setup (on/off + per-module config). */
+
+export function modPresets() {
+  if (!state.settings.modProfiles || typeof state.settings.modProfiles !== 'object') state.settings.modProfiles = {};
+  return state.settings.modProfiles;
+}
+
+export function saveModPreset(name) {
+  modPresets()[name] = {
+    overrides: { ...state.modOverrides },
+    configs: JSON.parse(JSON.stringify(state.modConfigs)),
+  };
+  save('mods');
+}
+
+export function applyModPreset(name) {
+  const p = modPresets()[name];
+  if (!p) return false;
+  state.modOverrides = { ...p.overrides };
+  state.modConfigs = JSON.parse(JSON.stringify(p.configs || {}));
+  save('mods');
+  return true;
+}
+
+export function deleteModPreset(name) {
+  delete modPresets()[name];
+  save('mods');
 }
