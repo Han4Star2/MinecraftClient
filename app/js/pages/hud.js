@@ -269,6 +269,7 @@ function staticText(e) {
 }
 
 function dynamicText(e, tick) {
+  if (e.custom) return e.text || e.label; // developer-API elements
   switch (e.id) {
     case 'fps': return `${236 + Math.round(Math.sin(tick / 3) * 14)} FPS`;
     case 'avgfps': return `avg ${228 + (tick % 3)} FPS`;

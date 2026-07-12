@@ -235,12 +235,18 @@ export function myServers() {
   return state.settings.servers;
 }
 
-export function addServer({ name, addr }) {
+export function addServer({ name, addr, profileId = '' }) {
   const list = myServers();
   const id = `sv-${Date.now().toString(36)}`;
-  list.push({ id, name: name || addr, addr, fav: false });
+  list.push({ id, name: name || addr, addr, fav: false, profileId });
   save('servers');
   return list[list.length - 1];
+}
+
+/** Bind an instance to a server: joining it always launches that profile. */
+export function setServerProfile(id, profileId) {
+  const s = myServers().find((x) => x.id === id);
+  if (s) { s.profileId = profileId; save('servers'); }
 }
 
 export function removeServer(id) {

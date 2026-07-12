@@ -6,7 +6,7 @@
 import { icon } from '../icons.js';
 import { t } from '../i18n.js';
 import { el, esc, toast, modal } from '../components.js';
-import { myServers, addServer, removeServer, toggleServerFav, selectedProfile } from '../state.js';
+import { state, myServers, addServer, removeServer, toggleServerFav, setServerProfile, selectedProfile } from '../state.js';
 import { PINNED_SERVERS } from '../catalog.js';
 import { launchProfile } from '../launch.js';
 import { api, isConnected } from '../api.js';
@@ -93,8 +93,11 @@ export function render(root) {
   root.appendChild(page);
 }
 
-function join(addr) {
-  const p = selectedProfile();
+function join(addr, profileId = '') {
+  // Server profile system: a server bound to an instance always launches
+  // that instance (its own mods, packs, shaders) — Hypixel starts with the
+  // Hypixel setup, no matter what is globally active.
+  const p = (profileId && state.profiles.find((x) => x.id === profileId)) || selectedProfile();
   if (!p) { location.hash = '#/library'; return; }
   toast(`${t('sv.joining')} ${addr} — ${p.name}`, 'info');
   launchProfile(p, { server: addr });
@@ -108,10 +111,17 @@ function serverRow(s, repaint, editable) {
         <div class="friend-name ellipsis">${esc(s.name)} ${s.fav ? '<span style="color:var(--gold)">★</span>' : ''}${s.pinned ? ' <span class="badge outline">recommended</span>' : ''}</div>
         <div class="friend-sub mono sv-status">${esc(s.addr)} · …</div>
       </div>
-      ${editable ? `<button class="icon-btn small b-fav" title="Favorite">${icon('star')}</button>` : `<button class="icon-btn small b-save" title="${esc(t('sv.save'))}">${icon('plus')}</button>`}
+      ${editable ? `
+        <select class="input sv-profile" title="Instance for this server — its own mods, packs & shaders" style="width:130px;flex:none">
+          <option value="">Active instance</option>
+          ${state.profiles.map((p) => `<option value="${esc(p.id)}" ${p.id === s.profileId ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}
+        </select>
+        <button class="icon-btn small b-fav" title="Favorite">${icon('star')}</button>` : `<button class="icon-btn small b-save" title="${esc(t('sv.save'))}">${icon('plus')}</button>`}
       <button class="btn small green b-join">${icon('play')}<span>${esc(t('sv.join'))}</span></button>
       ${editable ? `<button class="icon-btn small b-del" title="${esc(t('lib.delete'))}">${icon('trash')}</button>` : ''}
     </div>`);
+
+  row.querySelector('.sv-profile')?.addEventListener('change', (e) => setServerProfile(s.id, e.target.value));
 
   const status = row.querySelector('.sv-status');
   if (isConnected()) {
@@ -126,7 +136,7 @@ function serverRow(s, repaint, editable) {
     status.textContent = `${s.addr} · ${t('common.demo')}`;
   }
 
-  row.querySelector('.b-join').addEventListener('click', () => join(s.addr));
+  row.querySelector('.b-join').addEventListener('click', () => join(s.addr, s.profileId));
   row.querySelector('.b-fav')?.addEventListener('click', () => { toggleServerFav(s.id); repaint(); });
   row.querySelector('.b-del')?.addEventListener('click', () => { removeServer(s.id); repaint(); });
   row.querySelector('.b-save')?.addEventListener('click', () => {

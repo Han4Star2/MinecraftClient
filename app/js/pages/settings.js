@@ -30,12 +30,48 @@ export function render(root) {
         <div>
           <div class="page-title">${esc(t('set.title'))}</div>
         </div>
+        <div class="search-box" style="width:250px">
+          ${icon('search')}
+          <input class="input set-search" placeholder="Search settings…" spellcheck="false">
+        </div>
       </div>
       <div class="settings-layout">
         <div class="settings-nav"></div>
         <div class="settings-main"></div>
       </div>
     </div>`);
+
+  /* live search: filters visible rows in the current category; on Enter,
+     jumps through all categories until a match is found */
+  const searchInput = page.querySelector('.set-search');
+  const applyFilter = () => {
+    const q = searchInput.value.trim().toLowerCase();
+    for (const row of page.querySelectorAll('.setting-row')) {
+      row.classList.toggle('hidden', !!q && !row.textContent.toLowerCase().includes(q));
+    }
+    for (const grp of page.querySelectorAll('.settings-group')) {
+      const any = !q || [...grp.querySelectorAll('.setting-row')].some((r) => !r.classList.contains('hidden'));
+      grp.classList.toggle('hidden', !any);
+    }
+  };
+  searchInput.addEventListener('input', applyFilter);
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    const q = searchInput.value.trim().toLowerCase();
+    if (!q) return;
+    // hop to the next category containing a match
+    const order = CATS.map((c) => c.id);
+    for (let step = 1; step <= order.length; step++) {
+      const candidate = order[(order.indexOf(cat) + step) % order.length];
+      cat = candidate;
+      paint();
+      applyFilter();
+      if ([...page.querySelectorAll('.setting-row:not(.hidden)')].length) {
+        nav.querySelectorAll('.nav-item').forEach((n) => n.classList.toggle('active', n.dataset.cat === cat));
+        break;
+      }
+    }
+  });
 
   const nav = page.querySelector('.settings-nav');
   const main = page.querySelector('.settings-main');
@@ -46,6 +82,7 @@ export function render(root) {
       cat = c.id;
       nav.querySelectorAll('.nav-item').forEach((n) => n.classList.toggle('active', n.dataset.cat === cat));
       paint();
+      applyFilter();
     });
     nav.appendChild(item);
   }
@@ -93,6 +130,53 @@ export function render(root) {
       makeSwitch(s.keepOpen, (v) => { s.keepOpen = v; save('settings'); })));
     g.appendChild(settingRow('Auto-update launcher', 'Pull releases from GitHub — no silent updates',
       makeSwitch(s.autoUpdate, (v) => { s.autoUpdate = v; save('settings'); })));
+
+    const gs = group('Setup sync');
+    const expRow = settingRow('Export my setup', 'One file with settings, instances, modules, HUD layout, keybinds, cosmetics and progress — restore it on any PC (or keep it as a backup)',
+      el(`<button class="btn small dark">${icon('download')}<span>Export</span></button>`));
+    expRow.querySelector('button').addEventListener('click', () => {
+      const bundle = {
+        horusSetup: 1,
+        exportedAt: new Date().toISOString(),
+        settings: state.settings,
+        profiles: state.profiles,
+        hud: state.hud,
+        modOverrides: state.modOverrides,
+        modConfigs: state.modConfigs,
+        favorites: state.favorites,
+        cosmetics: state.cosmetics,
+        economy: state.economy,
+      };
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' }));
+      a.download = `horus-setup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast('Setup exported ✓');
+    });
+    gs.appendChild(expRow);
+    const impRow = settingRow('Import a setup', 'Restores everything from an exported file — current state is replaced',
+      el(`<button class="btn small dark">${icon('upload')}<span>Import</span></button>`));
+    impRow.querySelector('button').addEventListener('click', () => {
+      const inp = document.createElement('input');
+      inp.type = 'file';
+      inp.accept = '.json,application/json';
+      inp.addEventListener('change', async () => {
+        try {
+          const data = JSON.parse(await inp.files[0].text());
+          if (!data.horusSetup) throw new Error('not a Horus setup file');
+          if (data.settings) Object.assign(s, data.settings);
+          for (const k of ['profiles', 'hud', 'modOverrides', 'modConfigs', 'favorites', 'cosmetics', 'economy']) {
+            if (data[k] !== undefined) state[k] = data[k];
+          }
+          save('settings');
+          toast('Setup imported — reloading…', 'ok');
+          setTimeout(() => location.reload(), 900);
+        } catch (e) { toast(`Import failed: ${e.message}`, 'err'); }
+      });
+      inp.click();
+    });
+    gs.appendChild(impRow);
 
     const g2 = group('Privacy');
     g2.appendChild(el(`<div class="setting-row"><div class="s-label"><div class="name">Telemetry</div><div class="desc">Horus collects nothing. There is no analytics code to turn off.</div></div><span class="badge free">NONE — EVER</span></div>`));

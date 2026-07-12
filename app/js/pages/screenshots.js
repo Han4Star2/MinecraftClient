@@ -30,9 +30,37 @@ export function render(root) {
           <button class="btn small dark b-replay-mod">${icon('download')}<span>Install Replay Mod</span></button>
           <button class="btn small dark b-replay-module"></button>
         </div>
+        <div class="replay-list col" style="width:100%;gap:4px"></div>
       </div>
       <div class="shot-grid"></div>
     </div>`);
+
+  /* replay browser: real .mcpr recordings from every profile */
+  (async () => {
+    if (!isConnected()) return;
+    const list = page.querySelector('.replay-list');
+    try {
+      const { replays } = await api.get('api/replays');
+      if (!replays.length) return;
+      list.appendChild(el(`<div class="tiny faint" style="margin-top:6px">${replays.length} recording${replays.length > 1 ? 's' : ''}:</div>`));
+      for (const r of replays.slice(0, 8)) {
+        const row = el(`
+          <div class="version-row">
+            <span class="grow ellipsis mono" style="font-size:12px">${esc(r.file)}</span>
+            <span class="tiny faint nowrap">${esc(r.profileName)} · ${(r.size / 1048576).toFixed(1)} MB · ${new Date(r.mtime).toLocaleDateString()}</span>
+            <button class="icon-btn small b-rdel" title="Delete">${icon('trash')}</button>
+          </div>`);
+        row.querySelector('.b-rdel').addEventListener('click', async () => {
+          try {
+            await api.post(`api/profiles/${encodeURIComponent(r.profileId)}/replays/delete`, { file: r.file });
+            row.remove();
+            toast(`${r.file} deleted`);
+          } catch (e) { toast(e.message, 'err'); }
+        });
+        list.appendChild(row);
+      }
+    } catch { /* no recordings yet */ }
+  })();
 
   const replayMod = MODS.find((m) => m.id === 'replay');
   const moduleBtn = page.querySelector('.b-replay-module');
@@ -93,16 +121,90 @@ function realCard(s) {
       <div class="shot-meta">
         <span class="shot-name ellipsis">${esc(s.file)}</span>
         <span class="shot-date">${new Date(s.mtime).toLocaleDateString()}</span>
+        <button class="icon-btn small b-edit" title="Edit (blur tool)">${icon('edit')}</button>
+        <button class="icon-btn small b-del" title="Delete">${icon('trash')}</button>
       </div>
     </div>`);
-  card.addEventListener('click', () => {
+  card.addEventListener('click', (e) => {
+    if (e.target.closest('.icon-btn')) return;
     modal({
       title: s.file,
       size: 'lg',
       body: `<div class="lightbox"><img src="screenshots/${encodeURIComponent(s.file)}" alt=""></div>`,
     });
   });
+  card.querySelector('.b-del').addEventListener('click', async () => {
+    try {
+      await api.post('api/screenshots/delete', { file: s.file });
+      card.remove();
+      toast(`${s.file} deleted`);
+    } catch (e) { toast(e.message, 'err'); }
+  });
+  card.querySelector('.b-edit').addEventListener('click', () => openEditor(s));
   return card;
+}
+
+/* ------------------------------------------------------------ blur editor */
+/* Drag a rectangle → that region gets pixelated (name tags, coordinates,
+   server IPs). Saves as a new "-edited.png" next to the original. */
+
+function openEditor(s) {
+  const body = el(`
+    <div class="col" style="gap:10px">
+      <div class="tiny faint">Drag over the areas to censor — each drag pixelates its rectangle. Nothing is overwritten: saving creates <span class="mono">${esc(s.file.replace(/\.[^.]+$/, ''))}-edited.png</span>.</div>
+      <canvas class="ed-canvas" style="max-width:100%;border-radius:9px;cursor:crosshair"></canvas>
+    </div>`);
+  const save = el(`<button class="btn primary">${icon('save')}<span>Save copy</span></button>`);
+  const undo = el(`<button class="btn ghost">${icon('rotate')}<span>Reset</span></button>`);
+  modal({ title: `Edit — ${s.file}`, body, size: 'lg', footer: [undo, save] });
+
+  const cv = body.querySelector('canvas');
+  const x = cv.getContext('2d');
+  const img = new Image();
+  img.onload = () => {
+    cv.width = img.naturalWidth;
+    cv.height = img.naturalHeight;
+    x.drawImage(img, 0, 0);
+  };
+  img.src = `screenshots/${encodeURIComponent(s.file)}`;
+
+  let dragFrom = null;
+  const toCanvas = (e) => {
+    const r = cv.getBoundingClientRect();
+    return [(e.clientX - r.left) * (cv.width / r.width), (e.clientY - r.top) * (cv.height / r.height)];
+  };
+  cv.addEventListener('pointerdown', (e) => { dragFrom = toCanvas(e); cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointerup', (e) => {
+    if (!dragFrom) return;
+    const [x2, y2] = toCanvas(e);
+    pixelate(Math.min(dragFrom[0], x2), Math.min(dragFrom[1], y2), Math.abs(x2 - dragFrom[0]), Math.abs(y2 - dragFrom[1]));
+    dragFrom = null;
+  });
+
+  function pixelate(px, py, w, h) {
+    if (w < 4 || h < 4) return;
+    const block = Math.max(8, Math.round(Math.min(w, h) / 6));
+    for (let by = 0; by < h; by += block) {
+      for (let bx = 0; bx < w; bx += block) {
+        const d = x.getImageData(px + bx, py + by, 1, 1).data;
+        x.fillStyle = `rgb(${d[0]},${d[1]},${d[2]})`;
+        x.fillRect(px + bx, py + by, Math.min(block, w - bx), Math.min(block, h - by));
+      }
+    }
+  }
+
+  undo.addEventListener('click', () => x.drawImage(img, 0, 0));
+  save.addEventListener('click', async () => {
+    save.disabled = true;
+    try {
+      const res = await api.post('api/screenshots/save', { file: s.file, dataUrl: cv.toDataURL('image/png') });
+      toast(`Saved as ${res.saved}`, 'ok');
+      location.reload();
+    } catch (e) {
+      toast(e.message, 'err');
+      save.disabled = false;
+    }
+  });
 }
 
 /* Procedural demo screenshot: a blocky voxel landscape drawn on canvas. */

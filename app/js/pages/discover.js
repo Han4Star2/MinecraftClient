@@ -279,6 +279,10 @@ async function openReview(page) {
           <div class="grow" style="min-width:0">
             <div style="font-weight:700">${esc(c.name)} <span class="tiny faint">v${esc(c.latest?.version)} · ${esc(c.type)} · by ${esc(c.author)}</span></div>
             <div class="tiny faint">${esc(c.summary || 'no description')}</div>
+            ${c.latest?.scan ? `
+              <div class="tiny" style="margin-top:4px;color:${{ low: 'var(--green)', medium: 'var(--gold)', high: 'var(--accent-2)' }[c.latest.scan.risk]}">
+                ${icon('shield')} Security scan: ${esc(c.latest.scan.risk)} risk${c.latest.scan.flags.length ? ` — ${esc(c.latest.scan.flags.join(' · '))}` : ' — archive clean'}
+              </div>` : ''}
           </div>
           <button class="btn small green b-verify">${icon('shield')}<span>Verify</span></button>
           <button class="btn small dark b-approve">${icon('check')}<span>Approve</span></button>

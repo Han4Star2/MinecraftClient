@@ -371,6 +371,56 @@ export async function handleApi(req, res, url) {
       sendJson(res, 200, { path: dir });
       return true;
     }
+    if (method === 'POST' && pathname === '/api/screenshots/delete') {
+      const { file } = await readJsonBody(req);
+      if (typeof file !== 'string' || !file) { sendJson(res, 400, { error: 'missing file' }); return true; }
+      await fsp.rm(path.join(store.dirs().screenshots, path.basename(file)));
+      sendJson(res, 200, { deleted: path.basename(file) });
+      return true;
+    }
+    if (method === 'POST' && pathname === '/api/screenshots/save') {
+      // edited image from the blur/crop editor — saved as a new file
+      const { file, dataUrl } = await readJsonBody(req);
+      const m2 = /^data:image\/png;base64,(.+)$/.exec(dataUrl || '');
+      if (!m2 || typeof file !== 'string') { sendJson(res, 400, { error: 'expected file + png dataUrl' }); return true; }
+      const buf = Buffer.from(m2[1], 'base64');
+      if (buf.length > 24 * 1024 * 1024) { sendJson(res, 400, { error: 'image too large' }); return true; }
+      const name = `${path.basename(file).replace(/\.(png|jpe?g|webp)$/i, '')}-edited.png`;
+      const dir = store.dirs().screenshots;
+      await ensureDir(dir);
+      await fsp.writeFile(path.join(dir, name), buf);
+      sendJson(res, 200, { saved: name });
+      return true;
+    }
+
+    /* -------------------------------------------------------------- replays */
+    if (method === 'GET' && pathname === '/api/replays') {
+      // every profile's replay_recordings/ (the Replay Mod standard folder)
+      const replays = [];
+      for (const profile of store.getProfiles()) {
+        const dir = path.join(store.profileGameDir(profile), 'replay_recordings');
+        let entries = [];
+        try { entries = await fsp.readdir(dir); } catch { continue; }
+        for (const f of entries) {
+          if (!f.endsWith('.mcpr')) continue;
+          const st = await fsp.stat(path.join(dir, f));
+          replays.push({ profileId: profile.id, profileName: profile.name, file: f, size: st.size, mtime: st.mtimeMs });
+        }
+      }
+      replays.sort((a, b) => b.mtime - a.mtime);
+      sendJson(res, 200, { replays });
+      return true;
+    }
+    m = pathname.match(/^\/api\/profiles\/([^/]+)\/replays\/delete$/);
+    if (m && method === 'POST') {
+      const profile = store.getProfile(decodeURIComponent(m[1]));
+      if (!profile) { sendJson(res, 404, { error: 'unknown profile' }); return true; }
+      const { file } = await readJsonBody(req);
+      if (typeof file !== 'string' || !file.endsWith('.mcpr')) { sendJson(res, 400, { error: 'missing .mcpr file' }); return true; }
+      await fsp.rm(path.join(store.profileGameDir(profile), 'replay_recordings', path.basename(file)));
+      sendJson(res, 200, { deleted: path.basename(file) });
+      return true;
+    }
 
     /* --------------------------------------------------------------- cache */
     if (method === 'POST' && pathname === '/api/cache/clear') {
@@ -438,6 +488,20 @@ export async function handleApi(req, res, url) {
     }
 
     /* --------------------------------------------- server API (overlays) */
+    if (method === 'POST' && pathname === '/api/serverapi/hud') {
+      // Developer API: register/update a custom HUD element. It appears in
+      // the HUD editor (Misc group) and renders its text live.
+      const body = await readJsonBody(req);
+      const id = String(body.id || '').replace(/[^a-z0-9_-]/gi, '').slice(0, 32);
+      if (!id) { sendJson(res, 400, { error: 'id required ([a-z0-9_-], ≤32 chars)' }); return true; }
+      events.emit({ type: 'hud', payload: {
+        id: `api-${id}`,
+        label: String(body.label || id).slice(0, 40),
+        text: String(body.text || '').slice(0, 120),
+      } });
+      sendJson(res, 200, { registered: `api-${id}` });
+      return true;
+    }
     if (method === 'POST' && pathname === '/api/serverapi/overlay') {
       const body = await readJsonBody(req);
       events.emit({ type: 'overlay', payload: {

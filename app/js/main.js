@@ -137,7 +137,7 @@ function renderTopbar() {
 
   drawFace(wrap.querySelector('.tb-account canvas'), 22);
   wrap.querySelector('.tb-instances').addEventListener('click', () => { location.hash = '#/library'; });
-  wrap.querySelector('.tb-account').addEventListener('click', () => { location.hash = '#/settings?cat=account'; });
+  wrap.querySelector('.tb-account').addEventListener('click', (e) => accountSwitcher(e.currentTarget));
   wrap.querySelector('.tb-friends').addEventListener('click', () => { location.hash = '#/social'; });
   wrap.querySelector('.tb-notif').addEventListener('click', () => { location.hash = '#/social'; });
   wrap.querySelector('[data-nav="back"]').addEventListener('click', () => history.back());
@@ -153,6 +153,44 @@ function renderTopbar() {
 function renderChrome() {
   renderRail();
   renderTopbar();
+}
+
+/* -------------------------------------------------- account quick-switcher */
+/* Two clicks from anywhere: avatar dropdown with every saved account,
+   session type, one-click switch, and jumps into full account settings. */
+
+async function accountSwitcher(anchor) {
+  document.querySelector('.acc-pop')?.remove();
+  const { accounts, switchAccount } = await import('./state.js');
+  const list = accounts();
+  const rect = anchor.getBoundingClientRect();
+  const pop = el(`<div class="acc-pop" style="top:${rect.bottom + 6}px;right:${Math.max(8, window.innerWidth - rect.right)}px"></div>`);
+
+  for (const acc of list) {
+    const active = acc.name === state.settings.accountName;
+    const row = el(`
+      <button class="acc-row ${active ? 'active' : ''}">
+        <canvas width="26" height="26"></canvas>
+        <span class="grow" style="min-width:0;text-align:left">
+          <b class="ellipsis" style="display:block">${esc(acc.name)}</b>
+          <span class="tiny faint">${acc.type === 'msa' ? 'Microsoft' : 'Offline'}${active ? ' · active' : ''}</span>
+        </span>
+        ${active ? icon('check') : ''}
+      </button>`);
+    drawFace(row.querySelector('canvas'), 26);
+    row.addEventListener('click', () => {
+      if (!active) switchAccount(acc.id);
+      pop.remove();
+    });
+    pop.appendChild(row);
+  }
+  const manage = el(`<button class="acc-row manage">${icon('settings')}<span class="grow" style="text-align:left">Manage accounts…</span></button>`);
+  manage.addEventListener('click', () => { pop.remove(); location.hash = '#/settings?cat=account'; });
+  pop.appendChild(manage);
+
+  const outside = (ev) => { if (!pop.contains(ev.target) && ev.target !== anchor) { pop.remove(); document.removeEventListener('mousedown', outside); } };
+  document.addEventListener('mousedown', outside);
+  document.body.appendChild(pop);
 }
 
 /* ------------------------------------------------------------ settings fx */
@@ -213,6 +251,16 @@ async function boot() {
   onEvent((evt) => {
     if (evt.type === 'overlay' && evt.payload) {
       toast(`${evt.payload.title ? `${evt.payload.title}: ` : ''}${evt.payload.text}`, evt.payload.kind || 'info', 5000);
+    }
+    if (evt.type === 'hud' && evt.payload) {
+      // Developer API: custom HUD elements land in the editor's Misc group.
+      import('./state.js').then(({ hudElements, save }) => {
+        const els = hudElements();
+        const cur = els.find((e) => e.id === evt.payload.id);
+        if (cur) { cur.text = evt.payload.text; cur.label = evt.payload.label; }
+        else els.push({ id: evt.payload.id, label: evt.payload.label, group: 'misc', custom: true, text: evt.payload.text, x: 40, y: 40, on: true, scale: 1, color: '#9be8ff', boxed: true });
+        save('hud');
+      });
     }
   });
 

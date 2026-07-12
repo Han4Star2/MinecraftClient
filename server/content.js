@@ -230,6 +230,7 @@ export async function uploadContent(meta, buf) {
   const version = (meta.version || detected.version || '1.0.0').toString().slice(0, 40);
   const hash = sha1(buf);
   const id = `usr-${sha1(name + meta.author).slice(0, 8)}`;
+  const scan = securityScan(buf);
 
   const dest = path.join(filesDir(), id, `${sanitize(name)}-${sanitize(version)}${TYPES[meta.type].ext}`);
   await ensureDir(path.dirname(dest));
@@ -241,6 +242,7 @@ export async function uploadContent(meta, buf) {
     sha1: hash,
     size: buf.length,
     uploadedAt: Date.now(),
+    scan,
   };
 
   let entry = reg.content.find((c) => c.id === id);
@@ -280,6 +282,30 @@ export async function uploadContent(meta, buf) {
 
 function sanitize(s) {
   return String(s).replace(/[^a-zA-Z0-9._-]+/g, '_').slice(0, 60) || 'file';
+}
+
+/* -------------------------------------------------------- security scan */
+/* Automated checks on every upload, shown to the reviewer next to the
+   approve button. Honest scope: this flags concretely suspicious archive
+   contents (native binaries, scripts, path escapes) — it is a tripwire
+   for the human review step, not an antivirus. */
+
+function securityScan(buf) {
+  const flags = [];
+  try {
+    const entries = listEntries(buf);
+    for (const e of entries) {
+      const n = e.name.toLowerCase();
+      if (/\.(exe|bat|cmd|ps1|sh|dll|so|dylib|jnilib)$/.test(n)) flags.push(`native/script file: ${e.name}`);
+      if (n.includes('..') || n.startsWith('/') || /^[a-z]:/.test(n)) flags.push(`path escape: ${e.name}`);
+    }
+    if (entries.length === 0) flags.push('archive lists no entries');
+  } catch {
+    flags.push('not a readable zip archive');
+  }
+  const risk = flags.some((f) => f.startsWith('path escape') || f.startsWith('not a readable')) ? 'high'
+    : flags.length ? 'medium' : 'low';
+  return { risk, flags: flags.slice(0, 12), scannedAt: Date.now() };
 }
 
 /* ------------------------------------------------------------------ review */

@@ -41,6 +41,23 @@ curl -X POST http://127.0.0.1:7411/api/serverapi/overlay \
   -d '{"title":"Hello","text":"from your server","kind":"ok"}'
 ```
 
+## Custom HUD elements (developer API)
+
+Register your own HUD element — it appears in the HUD editor (Misc group,
+draggable/scalable/colorable like every built-in) and renders its text live.
+POST the same id again to update the text:
+
+```bash
+curl -X POST http://127.0.0.1:7411/api/serverapi/hud \
+  -H 'Content-Type: application/json' \
+  -d '{"id":"queue","label":"Queue position","text":"#3 in queue"}'
+```
+
+Rules: `id` is `[a-z0-9_-]` (≤32 chars, prefixed `api-` internally),
+`label` ≤40 chars, `text` ≤120 chars. Elements persist in the user's HUD
+layout; the user can hide or delete them like anything else — the client
+stays theirs, not yours.
+
 ## Everything else is the same API the UI uses
 
 The client keeps no private endpoints. Useful ones for tooling:
