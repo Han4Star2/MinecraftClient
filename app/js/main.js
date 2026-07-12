@@ -19,6 +19,7 @@ import * as cosmetics from './pages/cosmetics.js';
 import * as minigames from './pages/minigames.js';
 import * as social from './pages/social.js';
 import * as servers from './pages/servers.js';
+import * as progress from './pages/progress.js';
 import * as worlds from './pages/worlds.js';
 import * as screenshots from './pages/screenshots.js';
 import * as settings from './pages/settings.js';
@@ -38,6 +39,7 @@ const routes = {
   ingame: { mod: ingame, icon: 'gamepad', label: 'nav.ingame' },
   // secondary routes — reachable from inside pages, not on the rail
   news: { mod: news, icon: 'list', label: 'nav.news', off: true },
+  progress: { mod: progress, icon: 'star', label: 'nav.progress', off: true },
   shop: { mod: shop, icon: 'gift', label: 'nav.shop', off: true },
   worlds: { mod: worlds, icon: 'globe', label: 'nav.worlds', off: true },
   screenshots: { mod: screenshots, icon: 'camera', label: 'nav.screenshots', off: true },
@@ -76,7 +78,7 @@ function updateNav() {
     n.classList.toggle('active', n.dataset.route === current
       || (current === 'ingame' && n.dataset.route === 'ingame')
       || (['mods', 'hud', 'minigames'].includes(current) && n.dataset.route === 'ingame')
-      || (['shop', 'worlds', 'screenshots', 'news'].includes(current) && n.dataset.route === 'home'));
+      || (['shop', 'worlds', 'screenshots', 'news', 'progress'].includes(current) && n.dataset.route === 'home'));
   });
 }
 
@@ -201,6 +203,9 @@ async function boot() {
   render();
 
   window.addEventListener('hashchange', render);
+
+  // First run: the one-click playstyle setup (PvP / Survival / Building …).
+  import('./setup.js').then((m) => m.maybeShowSetupWizard());
 
   // Server API demo: overlay payloads pushed by game servers surface as toasts.
   const { onEvent } = await import('./api.js');

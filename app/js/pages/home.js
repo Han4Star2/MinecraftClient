@@ -67,6 +67,12 @@ export function render(root) {
   const sv = el(`<span class="chip" style="cursor:pointer" title="Servers — status, ping & quick join">${icon('globe')}<span>Servers</span></span>`);
   sv.addEventListener('click', () => { location.hash = '#/servers'; });
   chips.appendChild(sv);
+  import('../economy.js').then(({ progress }) => {
+    const p = progress();
+    const lvl = el(`<span class="chip" style="cursor:pointer" title="Progress — level, achievements & stats">${icon('star')}<span>Lv ${p.level}</span></span>`);
+    lvl.addEventListener('click', () => { location.hash = '#/progress'; });
+    chips.appendChild(lvl);
+  });
   const upd = el(`<span class="chip" style="cursor:pointer" title="What's new in ${esc(APP_VERSION)}">${icon('zap')}<span>v${esc(APP_VERSION)}</span></span>`);
   upd.addEventListener('click', () => { location.hash = '#/news'; });
   chips.appendChild(upd);

@@ -202,6 +202,8 @@ function renderRecommended(host) {
       row.classList.add('done');
       const deps = res.dependencies?.length ? ` (+${res.dependencies.length} dependencies)` : '';
       toast(`${item.name} ${res.version}${deps} installed`);
+      const { track } = await import('../economy.js');
+      track('modsInstalled');
       return true;
     } catch (e) {
       btn.innerHTML = icon('x');
@@ -595,8 +597,9 @@ function renderModrinth(host) {
               ? { projectId: hit.project_id, profileId: profile.id, type: mrKind }
               : { modId: hit.project_id, profileId: profile.id };
             const res = await api.post(`api/${source}/install`, payload);
-            const { questProgress } = await import('../economy.js');
+            const { questProgress, track } = await import('../economy.js');
             questProgress('q-mod-install');
+            track('modsInstalled');
             const deps = res.dependencies?.length ? ` (+${res.dependencies.length} dependencies)` : '';
             toast(`${hit.title} installed to ${KIND_DIRS[mrKind]}${deps}`);
           } catch (err) {

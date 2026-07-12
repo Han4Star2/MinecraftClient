@@ -20,6 +20,7 @@ const dict = {
     'nav.screenshots': 'Screenshots',
     'nav.settings': 'Settings',
     'nav.servers': 'Servers',
+    'nav.progress': 'Progress',
 
     'sv.title': 'Servers',
     'sv.sub': 'Saved servers with live status — Join starts the active instance straight onto the server.',
@@ -161,6 +162,7 @@ const dict = {
     'nav.screenshots': 'Screenshots',
     'nav.settings': 'Einstellungen',
     'nav.servers': 'Server',
+    'nav.progress': 'Fortschritt',
 
     'sv.title': 'Server',
     'sv.sub': 'Gespeicherte Server mit Live-Status — Beitreten startet die aktive Instanz direkt auf den Server.',

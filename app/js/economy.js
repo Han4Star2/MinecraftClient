@@ -21,8 +21,12 @@ export function economy() {
       minigame: { date: '', earned: 0, best: {} },
       customCapes: [],       // { id, name, pixels: [[hex|null]*10]*16 }
       capeFavorites: [],     // favorited cape ids (any source)
+      xp: 0,                 // progress system
+      counters: {},          // achievement counters: launches, screenshots…
+      unlocked: [],          // achievement ids
     };
   }
+  if (state.economy.xp === undefined) { state.economy.xp = 0; state.economy.counters = {}; state.economy.unlocked = []; }
   return state.economy;
 }
 
@@ -60,6 +64,7 @@ export function claimDaily() {
   e.daily.last = today();
   const bonus = Math.min(50, (e.daily.streak - 1) * 10);
   questProgress('q-daily-login');
+  if (e.daily.streak > (e.counters.streak || 0)) track('streak', e.daily.streak - (e.counters.streak || 0));
   return grant(50 + bonus, `daily (streak ${e.daily.streak})`);
 }
 
@@ -114,6 +119,7 @@ export function minigamePayout(game, score, per = 25) {
   if (e.minigame.date !== today()) { e.minigame.date = today(); e.minigame.earned = 0; }
   e.minigame.best[game] = Math.max(e.minigame.best[game] || 0, score);
   questProgress('q-minigame');
+  track('minigames');
   if (game === 'tetris' && score >= 1000) questProgress('q-tetris-1k');
   if (game === 'snake' && score >= 30) questProgress('q-snake-30');
   const room = Math.max(0, MINIGAME_DAILY_CAP - e.minigame.earned);
@@ -186,7 +192,7 @@ export function saveCustomCape(name, pixels, id = null) {
   const capeId = id || `custom-${Date.now().toString(36)}`;
   const existing = e.customCapes.find((c) => c.id === capeId);
   if (existing) { existing.name = name; existing.pixels = pixels; }
-  else e.customCapes.push({ id: capeId, name, pixels });
+  else { e.customCapes.push({ id: capeId, name, pixels }); track('capesCreated'); }
   questProgress('q-cape-create');
   save('economy');
   return capeId;
@@ -201,6 +207,65 @@ export function deleteCustomCape(id) {
 
 export function customCape(id) {
   return economy().customCapes.find((c) => c.id === id) || null;
+}
+
+/* ----------------------------------------------------- progress & levels */
+/* XP comes from playing the launcher itself: launches, quests, minigames,
+   the cape studio. Level curve: level n needs n·100 XP beyond the last. */
+
+export const ACHIEVEMENTS = [
+  { id: 'a-first-launch', name: 'First Flight', desc: 'Launch Minecraft once', icon: 'play', counter: 'launches', at: 1, xp: 50 },
+  { id: 'a-ten-launches', name: 'Regular', desc: 'Launch 10 times', icon: 'play', counter: 'launches', at: 10, xp: 150 },
+  { id: 'a-hundred-launches', name: 'Veteran', desc: 'Launch 100 times', icon: 'flame', counter: 'launches', at: 100, xp: 500 },
+  { id: 'a-first-mod', name: 'Tinkerer', desc: 'Install a mod', icon: 'mods', counter: 'modsInstalled', at: 1, xp: 50 },
+  { id: 'a-ten-mods', name: 'Mod Collector', desc: 'Install 10 mods', icon: 'package', counter: 'modsInstalled', at: 10, xp: 200 },
+  { id: 'a-first-cape', name: 'Designer', desc: 'Create a cape in the studio', icon: 'edit', counter: 'capesCreated', at: 1, xp: 100 },
+  { id: 'a-five-capes', name: 'Fashion House', desc: 'Create 5 capes', icon: 'shirt', counter: 'capesCreated', at: 5, xp: 250 },
+  { id: 'a-first-game', name: 'Player Two', desc: 'Play a minigame', icon: 'gamepad', counter: 'minigames', at: 1, xp: 50 },
+  { id: 'a-arcade', name: 'Arcade Rat', desc: 'Play 25 minigame rounds', icon: 'gamepad', counter: 'minigames', at: 25, xp: 300 },
+  { id: 'a-screenshotter', name: 'Say Cheese', desc: 'Take 10 screenshots', icon: 'camera', counter: 'screenshots', at: 10, xp: 150 },
+  { id: 'a-week-streak', name: 'Streak Week', desc: '7-day check-in streak', icon: 'clock', counter: 'streak', at: 7, xp: 300 },
+  { id: 'a-playtime-10', name: 'Getting Comfortable', desc: '10 hours played', icon: 'clock', counter: 'playHours', at: 10, xp: 300 },
+  { id: 'a-playtime-100', name: 'Centurion', desc: '100 hours played', icon: 'star', counter: 'playHours', at: 100, xp: 1000 },
+  { id: 'a-builder', name: 'Builder', desc: 'Parse a schematic material list', icon: 'grid', counter: 'schematics', at: 1, xp: 100 },
+  { id: 'a-server-join', name: 'Multiplayer', desc: 'Join a server via quick-connect', icon: 'globe', counter: 'serverJoins', at: 1, xp: 100 },
+];
+
+export function levelFromXp(xp) {
+  // cumulative cost: 100, 200, 300… per level → level L at 50·L·(L+1)
+  let level = 0;
+  while (50 * (level + 1) * (level + 2) <= xp) level++;
+  const floor = 50 * level * (level + 1);
+  const next = 50 * (level + 1) * (level + 2);
+  return { level: level + 1, into: xp - floor, needed: next - floor };
+}
+
+export function progress() {
+  const e = economy();
+  return { xp: e.xp, ...levelFromXp(e.xp), counters: e.counters, unlocked: e.unlocked };
+}
+
+/** Bump an achievement counter; unlocks award XP (and a few coins). */
+export function track(counter, amount = 1) {
+  const e = economy();
+  e.counters[counter] = (e.counters[counter] || 0) + amount;
+  e.xp += amount * (counter === 'playHours' ? 20 : 5);
+  const newly = [];
+  for (const a of ACHIEVEMENTS) {
+    if (a.counter === counter && !e.unlocked.includes(a.id) && e.counters[counter] >= a.at) {
+      e.unlocked.push(a.id);
+      e.xp += a.xp;
+      e.coins += Math.round(a.xp / 5);
+      newly.push(a);
+    }
+  }
+  save('economy');
+  if (newly.length) {
+    import('./components.js').then(({ toast }) => {
+      for (const a of newly) toast(`🏆 Achievement: ${a.name} (+${a.xp} XP, +${Math.round(a.xp / 5)} coins)`, 'ok', 4500);
+    });
+  }
+  return newly;
 }
 
 export function toggleCapeFavorite(id) {

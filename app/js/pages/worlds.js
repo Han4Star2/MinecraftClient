@@ -145,6 +145,7 @@ async function renderSchematics(box) {
       e.target.closest('button').disabled = true;
       try {
         const d = await api.get(`api/profiles/${encodeURIComponent(p.id)}/schematics/parse?file=${encodeURIComponent(it.file)}`);
+        import('../economy.js').then(({ track }) => track('schematics'));
         const body = el(`
           <div class="col" style="gap:10px">
             <div class="row" style="gap:8px">

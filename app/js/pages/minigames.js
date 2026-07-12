@@ -11,6 +11,8 @@ const GAMES = [
   { id: 'pong', name: 'Pong', desc: 'First to 5 beats the AI', hint: 'W/S or ↑↓ · first to 5' },
   { id: 'ttt', name: 'Tic Tac Toe', desc: 'Outsmart the client', hint: 'click a cell' },
   { id: 'snake', name: 'Snake', desc: 'Length 30 = quest done', hint: '←↑→↓ steer' },
+  { id: 'aim', name: 'Aim Trainer', desc: '30 s — hit the targets', hint: 'click targets · smaller = more points' },
+  { id: 'cps', name: 'CPS Test', desc: '10 s click speed test', hint: 'left-click as fast as you can' },
 ];
 
 let cleanup = null;
@@ -79,6 +81,17 @@ function drawCover(cv, id) {
     x.moveTo(35, 38); x.lineTo(105, 38); x.moveTo(35, 61); x.lineTo(105, 61); x.stroke();
     x.strokeStyle = '#e8394a'; x.beginPath(); x.moveTo(40, 20) ; x.lineTo(53, 33); x.moveTo(53, 20); x.lineTo(40, 33); x.stroke();
     x.strokeStyle = '#35d374'; x.beginPath(); x.arc(70, 49, 8, 0, 7); x.stroke();
+  } else if (id === 'aim') {
+    for (const [cx, cy, r, c] of [[45, 40, 18, '#e8394a'], [95, 65, 12, '#f3c14b'], [110, 25, 8, '#35d374']]) {
+      x.strokeStyle = c; x.lineWidth = 3;
+      x.beginPath(); x.arc(cx, cy, r, 0, 7); x.stroke();
+      x.beginPath(); x.arc(cx, cy, r * 0.4, 0, 7); x.stroke();
+    }
+  } else if (id === 'cps') {
+    x.fillStyle = '#e9ebef'; x.font = 'bold 30px sans-serif'; x.textAlign = 'center';
+    x.fillText('CPS', 70, 48);
+    x.fillStyle = '#e8394a'; x.font = 'bold 16px sans-serif';
+    x.fillText('click!', 70, 74);
   } else {
     x.fillStyle = '#35d374';
     for (let i = 0; i < 7; i++) x.fillRect(20 + i * 12, 50 - (i > 3 ? (i - 3) * 12 : 0), 10, 10);
@@ -111,7 +124,7 @@ function play(host, page, game) {
     toast(r.amount > 0 ? `+${r.amount} coins (${game.name})` : `Score saved — ${r.reason}`, r.amount ? 'ok' : 'info');
     hud.innerHTML = `<span>GAME OVER — score ${score.toLocaleString()} ${esc(extra)}</span><span>press R to retry</span>`;
   };
-  const engines = { tetris, pong, ttt, snake };
+  const engines = { tetris, pong, ttt, snake, aim, cps };
   cleanup = engines[game.id](cv, hud, finish);
   cv.focus();
 }
@@ -419,4 +432,136 @@ function snake(cv, hud, finish) {
   reset();
   draw();
   return () => { unkey(); clearInterval(timer); };
+}
+
+/* ------------------------------------------------------------ aim trainer */
+/* 30-second round: targets spawn, shrink and expire; smaller hits score
+   more. Tracks accuracy — real PvP warmup, not a toy. */
+
+function aim(cv, hud, finish) {
+  const W = 560, H = 380;
+  cv.width = W; cv.height = H;
+  cv.style.width = `${W}px`;
+  cv.style.cursor = 'crosshair';
+  const x = cv.getContext('2d');
+  let targets, hits, misses, score, timeLeft, over, raf, tick;
+
+  const spawn = () => targets.push({
+    x: 30 + Math.random() * (W - 60),
+    y: 30 + Math.random() * (H - 60),
+    r: 26, life: 2200, born: performance.now(),
+  });
+
+  const reset = () => {
+    targets = []; hits = 0; misses = 0; score = 0; timeLeft = 30; over = false;
+    spawn(); spawn();
+    clearInterval(tick);
+    tick = setInterval(() => {
+      if (over) return;
+      timeLeft--;
+      if (timeLeft <= 0) end();
+      else if (targets.length < 4) spawn();
+    }, 1000);
+  };
+
+  const end = () => {
+    over = true;
+    clearInterval(tick);
+    const acc = hits + misses ? Math.round((hits / (hits + misses)) * 100) : 0;
+    finish(score + acc * 2, `· ${hits} hits · ${acc}% accuracy`);
+  };
+
+  cv.addEventListener('mousedown', onClick);
+  function onClick(e) {
+    if (over) return;
+    const rect = cv.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (W / rect.width);
+    const my = (e.clientY - rect.top) * (H / rect.height);
+    const i = targets.findIndex((tg) => Math.hypot(tg.x - mx, tg.y - my) <= tg.r);
+    if (i >= 0) {
+      const tg = targets[i];
+      score += Math.round(10 + (26 - tg.r) * 2); // shrunken target = harder = more
+      hits++;
+      targets.splice(i, 1);
+      spawn();
+    } else {
+      misses++;
+    }
+  }
+
+  const loop = (now) => {
+    raf = requestAnimationFrame(loop);
+    for (const tg of targets) tg.r = 26 * Math.max(0.25, 1 - (now - tg.born) / tg.life);
+    for (let i = targets.length - 1; i >= 0; i--) {
+      if (now - targets[i].born > targets[i].life) { targets.splice(i, 1); misses++; spawn(); }
+    }
+    x.fillStyle = '#0b0c0f';
+    x.fillRect(0, 0, W, H);
+    for (const tg of targets) {
+      for (const [rr, c] of [[1, '#e8394a'], [0.66, '#eef3ff'], [0.33, '#e8394a']]) {
+        x.beginPath(); x.arc(tg.x, tg.y, tg.r * rr, 0, 7); x.fillStyle = c; x.fill();
+      }
+    }
+    if (!over) {
+      const acc = hits + misses ? Math.round((hits / (hits + misses)) * 100) : 100;
+      hud.innerHTML = `<span>⏱ ${timeLeft}s</span><span>Score ${score}</span><span>${hits} hits · ${acc}%</span>`;
+    }
+  };
+  raf = requestAnimationFrame(loop);
+
+  const unkey = keyloop({ r: reset, R: reset });
+  reset();
+  return () => { unkey(); clearInterval(tick); cancelAnimationFrame(raf); cv.removeEventListener('mousedown', onClick); };
+}
+
+/* --------------------------------------------------------------- cps test */
+/* Classic 10-second click-speed test with a live clicks-per-second curve. */
+
+function cps(cv, hud, finish) {
+  const W = 560, H = 300;
+  cv.width = W; cv.height = H;
+  cv.style.width = `${W}px`;
+  const x = cv.getContext('2d');
+  let clicks, startAt, over, raf;
+
+  const reset = () => { clicks = []; startAt = 0; over = false; };
+
+  cv.addEventListener('mousedown', onClick);
+  function onClick() {
+    if (over) return;
+    if (!startAt) startAt = performance.now();
+    clicks.push(performance.now());
+  }
+
+  const loop = (now) => {
+    raf = requestAnimationFrame(loop);
+    const elapsed = startAt ? (now - startAt) / 1000 : 0;
+    if (startAt && elapsed >= 10 && !over) {
+      over = true;
+      const rate = clicks.length / 10;
+      finish(Math.round(rate * 25), `· ${rate.toFixed(1)} CPS (${clicks.length} clicks)`);
+    }
+    x.fillStyle = '#0b0c0f';
+    x.fillRect(0, 0, W, H);
+    x.textAlign = 'center';
+    x.fillStyle = '#eef3ff';
+    x.font = 'bold 52px sans-serif';
+    const live = clicks.filter((t) => now - t < 1000).length;
+    x.fillText(over ? `${(clicks.length / 10).toFixed(1)} CPS` : startAt ? `${live} CPS` : 'CLICK TO START', W / 2, 120);
+    x.font = '15px sans-serif';
+    x.fillStyle = '#8b93a8';
+    x.fillText(over ? 'press R to retry' : startAt ? `${Math.max(0, 10 - elapsed).toFixed(1)}s left · ${clicks.length} clicks` : '10-second test — jitter & butterfly welcome', W / 2, 160);
+    if (startAt && !over) {
+      x.fillStyle = '#e8394a';
+      x.fillRect(40, 220, (W - 80) * Math.min(1, elapsed / 10), 8);
+      x.strokeStyle = 'rgba(255,255,255,0.15)';
+      x.strokeRect(40, 220, W - 80, 8);
+    }
+    if (!over) hud.innerHTML = `<span>Best: ${(economy().minigame.best.cps || 0)} pts</span><span>score = avg CPS × 25</span>`;
+  };
+  raf = requestAnimationFrame(loop);
+
+  const unkey = keyloop({ r: reset, R: reset });
+  reset();
+  return () => { unkey(); cancelAnimationFrame(raf); cv.removeEventListener('mousedown', onClick); };
 }

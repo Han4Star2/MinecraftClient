@@ -115,6 +115,7 @@ function takeShot(body) {
   btn.querySelector('button').addEventListener('click', () => { location.hash = '#/screenshots'; });
   body.appendChild(btn);
   toast('Screenshot saved', 'ok', 1600);
+  import('../economy.js').then(({ track }) => track('screenshots'));
 }
 
 /* ------------------------------------------------------ quick performance */

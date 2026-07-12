@@ -8,7 +8,7 @@ import { el, esc, toast, fmtBytes } from './components.js';
 import { icon } from './icons.js';
 import { t } from './i18n.js';
 import { state, save } from './state.js';
-import { questProgress } from './economy.js';
+import { questProgress, track } from './economy.js';
 
 let dock = null;
 let demoTimers = [];
@@ -27,9 +27,13 @@ export function launchProfile(profile, opts = {}) {
     toast('A launch is already in progress', 'info');
     return;
   }
-  active = { profile, phase: 'preparing' };
+  active = { profile, phase: 'preparing', startedAt: Date.now() };
   profile.lastPlayed = Date.now();
   questProgress('q-launch');
+  if (!opts.dryRun) {
+    track('launches');
+    if (opts.server) track('serverJoins');
+  }
   save('profiles');
   openDock(profile, opts);
 
@@ -166,7 +170,11 @@ function handleEvent(evt) {
   }
 
   if (evt.type === 'exit') {
-    if (active) active.phase = 'done';
+    if (active) {
+      active.phase = 'done';
+      const hours = (Date.now() - (active.startedAt || Date.now())) / 36e5;
+      if (hours > 0.05) track('playHours', Math.round(hours * 100) / 100);
+    }
     const spin = dock.querySelector('.d-spin');
     spin.classList.remove('spin');
     spin.innerHTML = icon('check');

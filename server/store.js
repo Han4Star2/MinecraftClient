@@ -54,6 +54,7 @@ export const DEFAULT_SETTINGS = {
   servers: [],
   keybinds: {},
   modProfiles: {},
+  setupDone: false,
 };
 
 const DEFAULT_PROFILES = [

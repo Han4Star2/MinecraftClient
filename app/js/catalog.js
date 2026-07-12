@@ -486,5 +486,6 @@ export function defaultSettings() {
     servers: [],
     keybinds: {},
     modProfiles: {},
+    setupDone: false,
   };
 }
