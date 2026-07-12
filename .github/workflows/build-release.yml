@@ -47,13 +47,14 @@ jobs:
           echo "version=$version" >> $env:GITHUB_OUTPUT
 
       - name: Check if Horus.exe exists
+        shell: bash
         run: |
           if [ -f "windows-app/dist/Horus.exe" ]; then
             echo "✓ Horus.exe built successfully"
             ls -lh windows-app/dist/Horus.exe
           else
             echo "✗ Horus.exe not found!"
-            ls -la windows-app/dist/
+            find windows-app -name "*.exe" -o -type d -name dist
             exit 1
           fi
 
