@@ -46,14 +46,25 @@ jobs:
           $version = (Get-Content package.json | ConvertFrom-Json).version
           echo "version=$version" >> $env:GITHUB_OUTPUT
 
+      - name: Check if Horus.exe exists
+        run: |
+          if [ -f "windows-app/dist/Horus.exe" ]; then
+            echo "✓ Horus.exe built successfully"
+            ls -lh windows-app/dist/Horus.exe
+          else
+            echo "✗ Horus.exe not found!"
+            ls -la windows-app/dist/
+            exit 1
+          fi
+
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: windows-app/dist/Horus.exe
-          tag_name: v${{ steps.version.outputs.version }}-${{ github.run_number }}
-          name: Horus ${{ steps.version.outputs.version }}
+          tag_name: v${{ steps.version.outputs.version }}-build.${{ github.run_number }}
+          name: Horus v${{ steps.version.outputs.version }}
           body: |
-            ## Horus Client
+            ## Horus Client v${{ steps.version.outputs.version }}
 
             **Windows Executable (Self-Installing)**
             - Double-click `Horus.exe` to install and launch
