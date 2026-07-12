@@ -6,7 +6,7 @@ import { icon } from '../icons.js';
 import { t } from '../i18n.js';
 import { el, esc, toast, modal, settingRow, control } from '../components.js';
 import {
-  state, modEnabled, setModEnabled, modConfig, setModConfigValue,
+  state, modEnabled, modLocked, setModEnabled, modConfig, setModConfigValue,
   toggleFavorite, isFavorite, selectedProfile,
 } from '../state.js';
 import { MODS, MOD_CATS } from '../catalog.js';
@@ -114,11 +114,19 @@ function modCard(m) {
   const stateBtn = card.querySelector('.state-btn');
   const paintState = () => {
     const on = modEnabled(m);
+    const locked = modLocked(m);
     stateBtn.classList.toggle('on', on);
+    stateBtn.classList.toggle('locked', locked);
+    stateBtn.disabled = locked;
+    stateBtn.title = locked ? `Locked ${on ? 'on' : 'off'} by FPS Boost — lower it in Settings → Performance to change this` : '';
     stateBtn.textContent = on ? t('mods.enabled') : t('mods.disabled');
   };
   paintState();
-  stateBtn.addEventListener('click', () => { setModEnabled(m, !modEnabled(m)); paintState(); });
+  stateBtn.addEventListener('click', () => {
+    if (modLocked(m)) return;
+    setModEnabled(m, !modEnabled(m));
+    paintState();
+  });
 
   card.querySelector('.heart-btn').addEventListener('click', (e) => {
     toggleFavorite(m.id);
@@ -144,8 +152,10 @@ function openConfig(m, onToggle) {
     </div>`);
   body.appendChild(head);
 
+  const locked = modLocked(m);
   const enabledCtrl = control({ t: 'toggle' }, modEnabled(m), (v) => { setModEnabled(m, v); onToggle?.(); });
-  body.appendChild(settingRow(t('mods.enabled'), null, enabledCtrl));
+  if (locked) enabledCtrl.disabled = true;
+  body.appendChild(settingRow(t('mods.enabled'), locked ? 'Locked by FPS Boost — lower it in Settings → Performance to change this' : null, enabledCtrl));
 
   const schema = m.cfg && m.cfg.length ? m.cfg : [
     { k: 'scale', t: 'slider', label: t('hud.scale'), min: 50, max: 200, def: 100, unit: '%' },

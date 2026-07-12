@@ -4,7 +4,8 @@
 import { icon } from '../icons.js';
 import { t } from '../i18n.js';
 import { el, esc, toast, makeSwitch, makeSlider, settingRow, control } from '../components.js';
-import { hudElements, resetHud, save } from '../state.js';
+import { hudElements, resetHud, save, hudElementEnabled, hudElementLocked, fpsBoostLevel } from '../state.js';
+import { FPS_BOOST_LEVELS } from '../catalog.js';
 
 let selectedId = null;
 
@@ -17,6 +18,7 @@ export function render(root) {
           <div class="page-sub">${esc(t('hud.sub'))}</div>
         </div>
         <div class="row">
+          <span class="chip boost-chip" style="cursor:pointer;display:none"></span>
           <span class="chip">${icon('hud')}<span>${esc(t('hud.grid'))}</span><span class="g-switch"></span></span>
           <button class="btn ghost b-reset">${icon('refresh')}<span>${esc(t('hud.reset'))}</span></button>
         </div>
@@ -49,6 +51,15 @@ export function render(root) {
   gSwitch.style.transform = 'scale(0.8)';
   page.querySelector('.g-switch').appendChild(gSwitch);
 
+  const boostChip = page.querySelector('.boost-chip');
+  const boostLvl = fpsBoostLevel();
+  if (boostLvl > 0) {
+    boostChip.style.display = 'inline-flex';
+    boostChip.innerHTML = `${icon('zap')}<span>FPS Boost: ${esc(FPS_BOOST_LEVELS[boostLvl].label)}</span>`;
+    boostChip.title = 'Hiding elements above their threshold — click to open Settings → Performance';
+    boostChip.addEventListener('click', () => { location.hash = '#/settings?cat=performance'; });
+  }
+
   page.querySelector('.b-reset').addEventListener('click', () => {
     resetHud();
     selectedId = null;
@@ -65,7 +76,7 @@ export function render(root) {
   function paintStage() {
     stage.querySelectorAll('.hud-el').forEach((n) => n.remove());
     for (const e of els()) {
-      if (!e.on) continue;
+      if (!hudElementEnabled(e)) continue;
       const node = el(`<div class="hud-el ${e.boxed ? 'boxed' : ''} ${e.id === selectedId ? 'selected' : ''}" data-id="${e.id}"></div>`);
       node.style.left = `${e.x}%`;
       node.style.top = `${e.y}%`;
@@ -82,15 +93,18 @@ export function render(root) {
   function paintList() {
     listBox.innerHTML = '';
     for (const e of els()) {
+      const locked = hudElementLocked(e);
       const row = el(`
-        <div class="hud-list-row ${e.id === selectedId ? 'selected' : ''}">
+        <div class="hud-list-row ${e.id === selectedId ? 'selected' : ''} ${locked ? 'locked' : ''}">
           <span class="grow">${esc(e.label)}</span>
+          ${locked ? `<span class="lock-flag" title="Forced off by FPS Boost">${icon('alert')}</span>` : ''}
         </div>`);
       const sw = makeSwitch(e.on, (on) => {
         e.on = on;
         save('hud');
         paintStage();
       });
+      sw.disabled = locked;
       row.appendChild(sw);
       row.addEventListener('click', (ev) => {
         if (ev.target.closest('.switch')) return;
@@ -111,6 +125,9 @@ export function render(root) {
       return;
     }
     selBody.innerHTML = `<div style="font-weight:700;margin:6px 0 2px">${esc(e.label)}</div>`;
+    if (hudElementLocked(e)) {
+      selBody.appendChild(el(`<div class="tiny faint" style="margin-bottom:8px">${icon('alert')} Hidden right now by FPS Boost — position and style stay saved.</div>`));
+    }
     selBody.appendChild(settingRow(t('hud.scale'), null,
       makeSlider({ min: 50, max: 250, value: Math.round(e.scale * 100), unit: '%' }, (v) => { e.scale = v / 100; save('hud'); paintStage(); })));
     selBody.appendChild(settingRow(t('hud.opacity'), null,
@@ -175,7 +192,7 @@ export function render(root) {
   const timer = setInterval(() => {
     tick++;
     for (const e of els()) {
-      if (!e.on) continue;
+      if (!hudElementEnabled(e)) continue;
       const node = stage.querySelector(`.hud-el[data-id="${e.id}"]`);
       if (!node) continue;
       const dyn = dynamicText(e, tick);

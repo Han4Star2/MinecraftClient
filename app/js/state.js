@@ -3,7 +3,7 @@
    - When the backend is connected, settings & profiles are loaded from and
      written back to the server store (~/.horus or ./data in portable mode). */
 
-import { defaultProfiles, defaultSettings, HUD_DEFAULTS, MODS } from './catalog.js';
+import { defaultProfiles, defaultSettings, HUD_DEFAULTS, MODS, FPS_BOOST_LEVELS } from './catalog.js';
 import { api, isConnected } from './api.js';
 
 const LS_KEY = 'horus.state.v1';
@@ -129,10 +129,30 @@ export function newProfileId(name) {
   return id;
 }
 
+/* ---------------------------------------------------------------- fps boost */
+/* One dial, six steps: forces some built-in modules/HUD elements on or off
+   without touching the user's own stored preference, so lowering the dial
+   again brings everything straight back. */
+
+export function fpsBoostLevel() {
+  const i = FPS_BOOST_LEVELS.findIndex((l) => l.id === (state.settings.fpsBoost || 'off'));
+  return i < 0 ? 0 : i;
+}
+
+function boostForcesOff(cutoff) {
+  return cutoff !== undefined && fpsBoostLevel() >= cutoff;
+}
+
 /* -------------------------------------------------------------------- mods */
 
 export function modEnabled(mod) {
+  if (mod.boostForceOn && fpsBoostLevel() >= 1) return true;
+  if (boostForcesOff(mod.boostCutoff)) return false;
   return state.modOverrides[mod.id] ?? mod.on;
+}
+
+export function modLocked(mod) {
+  return (mod.boostForceOn && fpsBoostLevel() >= 1) || boostForcesOff(mod.boostCutoff);
 }
 
 export function setModEnabled(mod, on) {
@@ -177,6 +197,14 @@ export function hudElements() {
 export function resetHud() {
   state.hud = HUD_DEFAULTS.map((e) => ({ ...e }));
   save('hud');
+}
+
+export function hudElementEnabled(e) {
+  return e.on && !boostForcesOff(e.boostCutoff);
+}
+
+export function hudElementLocked(e) {
+  return boostForcesOff(e.boostCutoff);
 }
 
 /* --------------------------------------------------------------- cosmetics */

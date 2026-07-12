@@ -37,6 +37,7 @@ Horus draws a clear line, exactly like NoRisk:
 | 📦 **Per-instance content** | Add mods, resource packs and shaders **per instance** from **Modrinth** and **CurseForge**, one-click install, verified badges, ratings, auto-updates. |
 | 🏪 **Integrated content platform** | Upload your own mods/packs directly in the launcher → **admin review** → verified badge → one-click install for everyone. **Server packs** bundle a server's mods + settings behind one **Join** button. |
 | 🎮 **In-game overlay** | Right Shift in a world → MOD MENU (40+ built-in modules), minigames (Tetris/Pong/Tic-Tac-Toe/Snake), HUD editor, cosmetics, social, screenshot. |
+| ⚡ **FPS Boost dial** | One slider, Off → Low → Medium → High → Extra → Extra High, in Settings → Performance. Each step force-disables more built-in modules and HUD elements — Extra is flagged **not recommended** (barely playable), Extra High leaves only the FPS counter. Non-destructive: your own on/off choices come straight back the moment you pull the dial down. |
 | 💬 **Social everywhere** | Friend requests, status, chats, feed, notifications — in the launcher **and** the in-game overlay. Optional & self-hostable. |
 | 🪙 **Coins, quests, Horus+** | Earn coins in-app (never with money) for shop cosmetics; the NRC+-style tier is paid **with coins**. |
 | ⬇️ **Real launcher core** | Every Minecraft version from Mojang's official metadata, SHA-1-verified parallel downloads, **Fabric/Quilt** auto-profiles, offline + Microsoft device-code login, **Bedrock** launch on Windows. |

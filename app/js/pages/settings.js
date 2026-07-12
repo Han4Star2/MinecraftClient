@@ -7,6 +7,7 @@ import { el, esc, toast, settingRow, control, makeSlider, makeSwitch } from '../
 import { state, save } from '../state.js';
 import { api, isConnected, serverStatus } from '../api.js';
 import { APP_VERSION } from '../version.js';
+import { FPS_BOOST_LEVELS } from '../catalog.js';
 
 const CATS = [
   { id: 'general', label: 'set.general', icon: 'settings' },
@@ -97,6 +98,24 @@ export function render(root) {
   /* ------------------------------------------------------------ performance */
   function paintPerformance() {
     const g = group(t('set.performance'));
+
+    const boostIdx = Math.max(0, FPS_BOOST_LEVELS.findIndex((l) => l.id === (s.fpsBoost || 'off')));
+    const boostRow = settingRow('FPS Boost', FPS_BOOST_LEVELS[boostIdx].tip,
+      makeSlider({ min: 0, max: FPS_BOOST_LEVELS.length - 1, step: 1, value: boostIdx, format: (v) => FPS_BOOST_LEVELS[v].label },
+        (v) => { s.fpsBoost = FPS_BOOST_LEVELS[v].id; save('settings'); paintBoostRow(v); }));
+    g.appendChild(boostRow);
+    const boostName = boostRow.querySelector('.s-label .name');
+    const boostDesc = boostRow.querySelector('.s-label .desc');
+    function paintBoostRow(idx) {
+      const lvl = FPS_BOOST_LEVELS[idx];
+      boostDesc.textContent = lvl.tip;
+      boostName.querySelectorAll('.badge').forEach((b) => b.remove());
+      if (lvl.id === 'extra') boostName.insertAdjacentHTML('beforeend', ' <span class="badge gold">Not recommended</span>');
+      if (lvl.id === 'extraHigh') boostName.insertAdjacentHTML('beforeend', ' <span class="badge red">FPS tests only</span>');
+    }
+    paintBoostRow(boostIdx);
+    g.appendChild(el(`<div class="tiny faint" style="padding:2px 0 6px">Forces off matching built-in modules (Mods page) and HUD elements (HUD Editor) above their threshold — your own on/off choices are remembered and come straight back when you lower this again.</div>`));
+
     const sys = serverStatus();
     const maxRam = sys?.totalMemMb ? Math.min(sys.totalMemMb, 32768) : 16384;
     const ramRow = settingRow(t('set.ram'), t('set.ram.d'),
