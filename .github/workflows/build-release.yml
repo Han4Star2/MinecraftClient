@@ -11,6 +11,9 @@ on:
       - 'package.json'
       - '.github/workflows/build-release.yml'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
@@ -83,7 +86,9 @@ jobs:
           - Setup sync: Export/import your entire configuration
           - Server profiles: Bind instances to game servers"
 
+          echo "Creating release with tag: $TAG"
           gh release create "$TAG" \
             --title "Horus v${{ steps.version.outputs.version }}" \
             --notes "$RELEASE_NOTES" \
-            windows-app/dist/Horus.exe
+            windows-app/dist/Horus.exe \
+            || { echo "::error::gh release create failed with exit code $?"; exit 1; }
