@@ -1,0 +1,76 @@
+name: Build & Release Horus
+
+on:
+  push:
+    branches:
+      - claude/feather-launcher-build-kr7j1e
+    paths:
+      - 'windows-app/**'
+      - 'app/**'
+      - 'server/**'
+      - 'package.json'
+      - '.github/workflows/build-release.yml'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build Horus.exe
+        run: |
+          cd windows-app
+          ./build.sh
+
+      - name: Get version from package.json
+        id: version
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: windows-app/dist/Horus.exe
+          tag_name: v${{ steps.version.outputs.version }}-${{ github.run_number }}
+          name: Horus ${{ steps.version.outputs.version }}
+          body: |
+            ## Horus Client
+
+            **Windows Executable (Self-Installing)**
+            - Double-click `Horus.exe` to install and launch
+            - No separate installer needed
+            - Includes all built-in modules, cosmetics system, mod manager, and more
+
+            **Features:**
+            - Horus Core: JVM optimization & verified-file cache for fast launches
+            - Horus Doctor: Rule-based crash/performance diagnostics
+            - Building system: NBT parser for schematics with material lists
+            - Progress system: XP, levels, and 15 achievements
+            - One-click setup: Playstyle presets (PvP/Survival/Building/Skyblock/Modded)
+            - Practice minigames: Aim Trainer & CPS Test
+            - Screenshot editor: Blur/pixelate with real canvas manipulation
+            - Replay browser: Real Replay-Mod .mcpr file support
+            - Setup sync: Export/import your entire configuration
+            - Server profiles: Bind instances to game servers
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
